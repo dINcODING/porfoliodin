@@ -29,23 +29,42 @@ const baseYaw = -12 * math.pi / 180;
 
 Color _monoInk(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFFEAEAEA)
+    ? const Color(0xFFF7F8FF)
     : ink;
 
 Color _monoMuted(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF99999C)
+    ? const Color(0xFFBCC3D1)
     : const Color(0xFF666663);
 
 Color _monoFaint(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF555558)
+    ? const Color(0xFF8E98AA)
     : const Color(0xFFAAAAA7);
 
 Color _monoBorder(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF222226)
+    ? const Color(0xFF63708A)
     : const Color(0xFFDDDDD9);
+
+bool _isDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _nightAccent(BuildContext context, Color daylight) {
+  if (!_isDark(context)) return daylight;
+  final hsl = HSLColor.fromColor(daylight);
+  return hsl
+      .withSaturation(math.max(.78, hsl.saturation))
+      .withLightness(math.max(.68, hsl.lightness))
+      .toColor();
+}
+
+List<Shadow>? _nightGlow(BuildContext context, Color color) => _isDark(context)
+    ? [
+        Shadow(color: color.withValues(alpha: .58), blurRadius: 10),
+        Shadow(color: color.withValues(alpha: .25), blurRadius: 24),
+      ]
+    : null;
 
 class PortfolioApp extends StatelessWidget {
   const PortfolioApp({super.key});
@@ -229,7 +248,7 @@ class _CubePortfolioState extends State<CubePortfolio>
   Widget build(BuildContext context) {
     final background = _darkMode ? Colors.black : Colors.white;
     final surface = _darkMode ? Colors.black : Colors.white;
-    final foreground = _darkMode ? const Color(0xFFEAEAEA) : ink;
+    final foreground = _darkMode ? const Color(0xFFF7F8FF) : ink;
     final generatedScheme = ColorScheme.fromSeed(
       seedColor: blue,
       brightness: _darkMode ? Brightness.dark : Brightness.light,
@@ -238,11 +257,11 @@ class _CubePortfolioState extends State<CubePortfolio>
       surface: surface,
       onSurface: foreground,
       onSurfaceVariant: _darkMode
-          ? const Color(0xFF99999C)
+          ? const Color(0xFFBCC3D1)
           : const Color(0xFF666663),
       outline: _darkMode ? const Color(0xFF77777B) : const Color(0xFF888884),
       outlineVariant: _darkMode
-          ? const Color(0xFF222226)
+          ? const Color(0xFF63708A)
           : const Color(0xFFDDDDD9),
       surfaceContainerLowest: _darkMode ? Colors.black : Colors.white,
       surfaceContainerLow: _darkMode
@@ -1497,7 +1516,13 @@ class _PageContinuation extends StatelessWidget {
                 children: [
                   Text(
                     'MORE TO EXPLORE',
-                    style: _meta.copyWith(color: const Color(0xFF37A5A2)),
+                    style: _meta.copyWith(
+                      color: _nightAccent(context, const Color(0xFF37A5A2)),
+                      shadows: _nightGlow(
+                        context,
+                        _nightAccent(context, const Color(0xFF37A5A2)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -1635,7 +1660,6 @@ const _meta = TextStyle(
   fontSize: 11,
   letterSpacing: 1.8,
   fontWeight: FontWeight.w800,
-  color: Color(0xFF555A60),
 );
 
 class _HomeFace extends StatelessWidget {
@@ -1656,8 +1680,12 @@ class _HomeFace extends StatelessWidget {
             Text(
               'FULLSTACK DEVELOPER',
               style: _meta.copyWith(
-                color: const Color(0xFF37A5A2),
+                color: _nightAccent(context, const Color(0xFF37A5A2)),
                 fontSize: compact ? 13 : 16,
+                shadows: _nightGlow(
+                  context,
+                  _nightAccent(context, const Color(0xFF37A5A2)),
+                ),
               ),
             ),
             SizedBox(height: compact ? 10 : 14),
@@ -1668,6 +1696,7 @@ class _HomeFace extends StatelessWidget {
                 height: .92,
                 letterSpacing: compact ? -2.8 : -5,
                 fontWeight: FontWeight.w700,
+                shadows: _nightGlow(context, _monoInk(context)),
               ),
             ),
             SizedBox(height: compact ? 8 : 12),
@@ -1686,7 +1715,7 @@ class _HomeFace extends StatelessWidget {
                 style: TextStyle(
                   fontSize: compact ? 15 : 18,
                   height: compact ? 1.35 : 1.5,
-                  color: const Color(0xFF666663),
+                  color: _monoMuted(context),
                 ),
               ),
             ),
@@ -1917,7 +1946,7 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       leading: CircleAvatar(
                         backgroundColor: active
-                            ? project.accent
+                            ? project.accentFor(context)
                             : Theme.of(context).colorScheme.surfaceContainer,
                         foregroundColor: active
                             ? Colors.white
@@ -1938,7 +1967,10 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: active
-                          ? Icon(LucideIcons.check, color: project.accent)
+                          ? Icon(
+                              LucideIcons.check,
+                              color: project.accentFor(context),
+                            )
                           : const Icon(LucideIcons.chevronRight),
                       onTap: () {
                         Navigator.pop(sheetContext);
@@ -2234,7 +2266,7 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                         selected: selected,
                         count: projects.length,
                         names: projects.map((project) => project.name).toList(),
-                        activeColor: projects[selected].accent,
+                        activeColor: projects[selected].accentFor(context),
                         onSelected: _scrollToProject,
                       ),
                     ),
@@ -2266,7 +2298,7 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                   child: RepaintBoundary(
                     child: _FloatingProjectNavigation(
                       selected: selected,
-                      accent: projects[selected].accent,
+                      accent: projects[selected].accentFor(context),
                       onTap: _showMobileProjectPicker,
                       onPrevious: selected == 0
                           ? null
@@ -2348,17 +2380,21 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                           Text(
                             project.category,
                             style: _meta.copyWith(
-                              color: const Color(0xFF299FA4),
+                              color: project.accentFor(context),
                               fontSize: 12,
+                              shadows: _nightGlow(
+                                context,
+                                project.accentFor(context),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 28),
                           Text(
                             project.description,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               height: 1.45,
-                              color: Color(0xFF666663),
+                              color: _monoMuted(context),
                             ),
                           ),
                           const SizedBox(height: 18),
@@ -2501,6 +2537,7 @@ class _ProjectData {
     'nasyrulquran.com' => const Color(0xFF477B72),
     _ => const Color(0xFF7C566A),
   };
+  Color accentFor(BuildContext context) => _nightAccent(context, accent);
   String? get screenshot => switch (name) {
     'Solatiy' => 'assets/images/solatiy-home.png',
     'Tadabbur Tazakkur Quran' => 'assets/images/tadabbur-mushaf.png',
@@ -2528,6 +2565,7 @@ class _ProjectActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final liveUrl = project.liveUrl;
+    final accent = project.accentFor(context);
     if (liveUrl == null) {
       return Text(
         'CASE STUDY COMING SOON',
@@ -2547,7 +2585,11 @@ class _ProjectActions extends StatelessWidget {
           onPressed: () => _openUri(context, liveUrl),
           icon: const Icon(LucideIcons.externalLink, size: 15),
           label: const Text('View Live Website'),
-          style: FilledButton.styleFrom(backgroundColor: project.accent),
+          style: FilledButton.styleFrom(
+            backgroundColor: accent,
+            shadowColor: _isDark(context) ? accent : null,
+            elevation: _isDark(context) ? 5 : 0,
+          ),
         ),
       ],
     );
@@ -2570,6 +2612,7 @@ class _ContinuousProjectSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = project.accentFor(context);
     final copy = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2592,12 +2635,17 @@ class _ContinuousProjectSection extends StatelessWidget {
             height: 1.05,
             letterSpacing: -.8,
             fontWeight: FontWeight.w500,
+            shadows: _nightGlow(context, _monoInk(context)),
           ),
         ),
         const SizedBox(height: 14),
         Text(
           project.category,
-          style: _meta.copyWith(color: project.accent, fontSize: 12),
+          style: _meta.copyWith(
+            color: accent,
+            fontSize: 12,
+            shadows: _nightGlow(context, accent),
+          ),
         ),
         const SizedBox(height: 10),
         _PlatformAvailability(project: project),
@@ -2655,7 +2703,11 @@ class _ContinuousProjectSection extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   project.category,
-                  style: _meta.copyWith(color: project.accent, fontSize: 11),
+                  style: _meta.copyWith(
+                    color: accent,
+                    fontSize: 11,
+                    shadows: _nightGlow(context, accent),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 _PlatformAvailability(project: project),
@@ -2685,14 +2737,11 @@ class _ContinuousProjectSection extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 58),
                   child: Row(
                     children: [
-                      _MobileTools(
-                        tools: project.tools,
-                        accent: project.accent,
-                      ),
+                      _MobileTools(tools: project.tools, accent: accent),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Material(
-                          color: project.accent,
+                          color: accent,
                           borderRadius: BorderRadius.circular(14),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(14),
@@ -2755,47 +2804,53 @@ class _MobileProjectHeader extends StatelessWidget {
   final int selected;
   final _ProjectData project;
   @override
-  Widget build(BuildContext context) => Material(
-    color: Theme.of(context).colorScheme.surface.withValues(alpha: .94),
-    elevation: 1,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 9),
-          child: Row(
-            children: [
-              Text(
-                '${(selected + 1).toString().padLeft(2, '0')} / 06',
-                style: _meta.copyWith(color: project.accent),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  project.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) {
+    final accent = project.accentFor(context);
+    return Material(
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: .94),
+      elevation: 1,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 9),
+            child: Row(
+              children: [
+                Text(
+                  '${(selected + 1).toString().padLeft(2, '0')} / 06',
+                  style: _meta.copyWith(
+                    color: accent,
+                    shadows: _nightGlow(context, accent),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    project.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            width: MediaQuery.sizeOf(context).width * ((selected + 1) / 6),
-            height: 2,
-            color: project.accent,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: MediaQuery.sizeOf(context).width * ((selected + 1) / 6),
+              height: 2,
+              color: accent,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _MobileHighlightCard extends StatefulWidget {
@@ -3009,6 +3064,7 @@ class _PlatformAvailability extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = project.accentFor(context);
     final platforms = project.phone
         ? const [
             (LucideIcons.smartphone, 'Android'),
@@ -3037,13 +3093,27 @@ class _PlatformAvailability extends StatelessWidget {
           (platform) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(platform.$1, size: 14, color: project.accent),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: _isDark(context)
+                      ? [
+                          BoxShadow(
+                            color: accent.withValues(alpha: .55),
+                            blurRadius: 12,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(platform.$1, size: 14, color: accent),
+              ),
               const SizedBox(width: 5),
               Text(
                 platform.$2,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
+                  shadows: _nightGlow(context, _monoInk(context)),
                 ),
               ),
             ],
@@ -3489,7 +3559,7 @@ class _ProjectVisual extends StatelessWidget {
                             top: 38,
                             child: _LargePhone(
                               width: 142,
-                              accent: project.accent,
+                              accent: project.accentFor(context),
                               screenshot: project.screenshot,
                               label: '${project.name} Android app preview',
                             ),
@@ -3499,7 +3569,7 @@ class _ProjectVisual extends StatelessWidget {
                             top: 30,
                             child: _LargePhone(
                               width: 142,
-                              accent: project.accent,
+                              accent: project.accentFor(context),
                               screenshot: project.secondaryScreenshot,
                               label: '${project.name} iOS app preview',
                               rotation: .055,
@@ -3531,7 +3601,7 @@ class _ProjectVisual extends StatelessWidget {
                               platform: 'Android',
                               child: _LargePhone(
                                 width: 155,
-                                accent: project.accent,
+                                accent: project.accentFor(context),
                                 screenshot: project.screenshot,
                                 label: '${project.name} Android app preview',
                               ),
@@ -3544,7 +3614,7 @@ class _ProjectVisual extends StatelessWidget {
                               platform: 'iOS',
                               child: _LargePhone(
                                 width: 155,
-                                accent: project.accent,
+                                accent: project.accentFor(context),
                                 screenshot: project.secondaryScreenshot,
                                 label: '${project.name} iOS app preview',
                                 rotation: .055,
@@ -3578,7 +3648,7 @@ class _ProjectVisual extends StatelessWidget {
                               platform: 'Mobile',
                               child: _LargePhone(
                                 width: 105,
-                                accent: project.accent,
+                                accent: project.accentFor(context),
                                 screenshot: project.secondaryScreenshot,
                                 label: '${project.name} mobile website preview',
                                 rotation: .035,
@@ -3609,7 +3679,7 @@ class _ProjectVisual extends StatelessWidget {
                               child: Icon(
                                 Icons.language_rounded,
                                 size: compact ? 28 : 55,
-                                color: project.accent,
+                                color: project.accentFor(context),
                               ),
                             )
                           : Image.asset(
@@ -3692,7 +3762,7 @@ class _CompactResponsiveWebPreview extends StatelessWidget {
           top: 30,
           child: _LargePhone(
             width: 88,
-            accent: project.accent,
+            accent: project.accentFor(context),
             screenshot: project.secondaryScreenshot,
             label: '${project.name} mobile website preview',
             rotation: .035,
@@ -4136,6 +4206,10 @@ class _ActionButton extends StatelessWidget {
             ? inverseBackground
             : Theme.of(context).colorScheme.surface,
         foregroundColor: dark ? inverseForeground : _monoInk(context),
+        shadowColor: _isDark(context)
+            ? _monoInk(context).withValues(alpha: .55)
+            : null,
+        elevation: _isDark(context) ? 4 : 0,
         textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         shape: RoundedRectangleBorder(
@@ -4186,10 +4260,14 @@ class _SkillsFace extends StatelessWidget {
               Text(
                 'FULL STACK ENGINEERING',
                 style: TextStyle(
-                  color: Color(0xFF299FA4),
+                  color: _nightAccent(context, const Color(0xFF299FA4)),
                   fontSize: compact ? 12 : 15,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w800,
+                  shadows: _nightGlow(
+                    context,
+                    _nightAccent(context, const Color(0xFF299FA4)),
+                  ),
                 ),
               ),
               SizedBox(height: compact ? 10 : 20),
@@ -5223,9 +5301,20 @@ class _ArchitectureLayerCard extends StatelessWidget {
           Container(
             width: 6 * scale,
             height: 6 * scale,
-            decoration: const BoxDecoration(
-              color: Color(0xFF37A5A2),
+            decoration: BoxDecoration(
+              color: _nightAccent(context, const Color(0xFF37A5A2)),
               shape: BoxShape.circle,
+              boxShadow: _isDark(context)
+                  ? [
+                      BoxShadow(
+                        color: _nightAccent(
+                          context,
+                          const Color(0xFF37A5A2),
+                        ).withValues(alpha: .7),
+                        blurRadius: 12,
+                      ),
+                    ]
+                  : null,
             ),
           ),
         ],
@@ -5385,15 +5474,16 @@ class _AboutFace extends StatelessWidget {
                 height: .98,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -2,
+                shadows: _nightGlow(context, _monoInk(context)),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'I build mobile and web products from idea, interaction design, and architecture through implementation.',
               style: TextStyle(
                 fontSize: 17,
                 height: 1.5,
-                color: Color(0xFF696966),
+                color: _monoMuted(context),
               ),
             ),
           ],
@@ -5495,7 +5585,13 @@ class _ContactFace extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Spacer(),
-          Text('HAVE A USEFUL IDEA?', style: _meta.copyWith(color: blue)),
+          Text(
+            'HAVE A USEFUL IDEA?',
+            style: _meta.copyWith(
+              color: _nightAccent(context, blue),
+              shadows: _nightGlow(context, _nightAccent(context, blue)),
+            ),
+          ),
           const SizedBox(height: 14),
           Text(
             'Let’s make\nit real.',
@@ -5504,6 +5600,7 @@ class _ContactFace extends StatelessWidget {
               height: .9,
               fontWeight: FontWeight.w700,
               letterSpacing: c.maxWidth < 520 ? -2.5 : -4,
+              shadows: _nightGlow(context, _monoInk(context)),
             ),
           ),
           const SizedBox(height: 22),

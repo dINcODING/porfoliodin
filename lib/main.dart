@@ -2488,12 +2488,11 @@ class _ProjectData {
   final List<(String, String, IconData)> highlights;
   final List<String> tools;
   final bool phone;
-  Uri? get liveUrl => name == 'Super Segar'
-      ? Uri.parse('https://dincoding.github.io/super-segar/')
-      : null;
-  Uri? get sourceUrl => name == 'Super Segar'
-      ? Uri.parse('https://github.com/dINcODING/super-segar')
-      : null;
+  Uri? get liveUrl => switch (name) {
+    'nasyrulquran.com' => Uri.parse('https://nasyrulquran.com/'),
+    'Super Segar' => Uri.parse('https://dincoding.github.io/super-segar/'),
+    _ => null,
+  };
   Color get accent => switch (name) {
     'Solatiy' => const Color(0xFF486455),
     'Tadabbur Tazakkur Quran' => const Color(0xFF8A683E),
@@ -2529,8 +2528,7 @@ class _ProjectActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final liveUrl = project.liveUrl;
-    final sourceUrl = project.sourceUrl;
-    if (liveUrl == null || sourceUrl == null) {
+    if (liveUrl == null) {
       return Text(
         'CASE STUDY COMING SOON',
         style: TextStyle(
@@ -2548,13 +2546,8 @@ class _ProjectActions extends StatelessWidget {
         FilledButton.icon(
           onPressed: () => _openUri(context, liveUrl),
           icon: const Icon(LucideIcons.externalLink, size: 15),
-          label: const Text('View Live Project'),
+          label: const Text('View Live Website'),
           style: FilledButton.styleFrom(backgroundColor: project.accent),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => _openUri(context, sourceUrl),
-          icon: const Icon(LucideIcons.code2, size: 15),
-          label: const Text('View Source Code'),
         ),
       ],
     );

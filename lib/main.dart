@@ -2370,10 +2370,7 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                                 .toList(),
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            'CASE STUDY COMING SOON',
-                            style: _meta.copyWith(color: _monoMuted(context)),
-                          ),
+                          _ProjectActions(project: project),
                         ],
                       );
                       final projectBody = Expanded(
@@ -2491,6 +2488,12 @@ class _ProjectData {
   final List<(String, String, IconData)> highlights;
   final List<String> tools;
   final bool phone;
+  Uri? get liveUrl => name == 'Super Segar'
+      ? Uri.parse('https://dincoding.github.io/super-segar/')
+      : null;
+  Uri? get sourceUrl => name == 'Super Segar'
+      ? Uri.parse('https://github.com/dINcODING/super-segar')
+      : null;
   Color get accent => switch (name) {
     'Solatiy' => const Color(0xFF486455),
     'Tadabbur Tazakkur Quran' => const Color(0xFF8A683E),
@@ -2517,6 +2520,45 @@ class _ProjectData {
     'Super Segar' => 'assets/images/super-segar-mobile.png',
     _ => null,
   };
+}
+
+class _ProjectActions extends StatelessWidget {
+  const _ProjectActions({required this.project});
+  final _ProjectData project;
+
+  @override
+  Widget build(BuildContext context) {
+    final liveUrl = project.liveUrl;
+    final sourceUrl = project.sourceUrl;
+    if (liveUrl == null || sourceUrl == null) {
+      return Text(
+        'CASE STUDY COMING SOON',
+        style: TextStyle(
+          fontSize: 10,
+          letterSpacing: 1.1,
+          fontWeight: FontWeight.w700,
+          color: _monoFaint(context),
+        ),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        FilledButton.icon(
+          onPressed: () => _openUri(context, liveUrl),
+          icon: const Icon(LucideIcons.externalLink, size: 15),
+          label: const Text('View Live Project'),
+          style: FilledButton.styleFrom(backgroundColor: project.accent),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => _openUri(context, sourceUrl),
+          icon: const Icon(LucideIcons.code2, size: 15),
+          label: const Text('View Source Code'),
+        ),
+      ],
+    );
+  }
 }
 
 class _ContinuousProjectSection extends StatelessWidget {
@@ -2593,15 +2635,7 @@ class _ContinuousProjectSection extends StatelessWidget {
         if (!compact) _ToolSummary(tools: project.tools),
         if (!compact) ...[
           const SizedBox(height: 12),
-          Text(
-            'CASE STUDY COMING SOON',
-            style: TextStyle(
-              fontSize: 10,
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w700,
-              color: _monoFaint(context),
-            ),
-          ),
+          _ProjectActions(project: project),
         ],
       ],
     );
@@ -2664,31 +2698,41 @@ class _ContinuousProjectSection extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Container(
-                          height: 48,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: project.accent,
+                        child: Material(
+                          color: project.accent,
+                          borderRadius: BorderRadius.circular(14),
+                          child: InkWell(
                             borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Visit Project',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                            onTap: () {
+                              final liveUrl = project.liveUrl;
+                              if (liveUrl != null) {
+                                _openUri(context, liveUrl);
+                              } else {
+                                onPreview();
+                              }
+                            },
+                            child: const SizedBox(
+                              height: 48,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Visit Project',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(width: 7),
+                                  Icon(
+                                    LucideIcons.arrowUpRight,
+                                    size: 17,
+                                    color: Colors.white,
+                                  ),
+                                ],
                               ),
-                              SizedBox(width: 7),
-                              Icon(
-                                LucideIcons.arrowUpRight,
-                                size: 17,
-                                color: Colors.white,
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),

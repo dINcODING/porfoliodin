@@ -92,6 +92,32 @@ void main() {
       await tester.tap(find.text('Scroll to explore').last);
       await tester.pumpAndSettle(const Duration(milliseconds: 900));
 
+      if (size.width < 900) {
+        expect(
+          find.byTooltip('Next project'),
+          findsOneWidget,
+          reason: 'Thumb navigator missing at ${size.width}×${size.height}',
+        );
+
+        final visual = tester.getRect(
+          find.byKey(const ValueKey('project-visual-Solatiy')),
+        );
+        for (final label in [
+          'Solatiy Android app preview',
+          'Solatiy iOS app preview',
+        ]) {
+          final preview = tester.getRect(
+            find.byKey(ValueKey('phone-preview-$label')),
+          );
+          expect(
+            visual.contains(preview.topLeft) &&
+                visual.contains(preview.bottomRight),
+            isTrue,
+            reason: '$label was clipped at ${size.width}×${size.height}',
+          );
+        }
+      }
+
       expect(
         tester.takeException(),
         isNull,

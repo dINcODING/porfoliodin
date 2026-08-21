@@ -2289,13 +2289,24 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                   child: _MobileProjectHeader(
                     selected: selected,
                     project: projects[selected],
-                    onTap: _showMobileProjectPicker,
-                    onPrevious: selected == 0
-                        ? null
-                        : () => _scrollToProject(selected - 1),
-                    onNext: selected == projects.length - 1
-                        ? null
-                        : () => _scrollToProject(selected + 1),
+                  ),
+                ),
+              if (compact && !_showIntro)
+                Positioned(
+                  right: 16,
+                  bottom: 112,
+                  child: RepaintBoundary(
+                    child: _FloatingProjectNavigation(
+                      selected: selected,
+                      accent: projects[selected].accentFor(context),
+                      onTap: _showMobileProjectPicker,
+                      onPrevious: selected == 0
+                          ? null
+                          : () => _scrollToProject(selected - 1),
+                      onNext: selected == projects.length - 1
+                          ? null
+                          : () => _scrollToProject(selected + 1),
+                    ),
                   ),
                 ),
             ],
@@ -2720,56 +2731,59 @@ class _ContinuousProjectSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Row(
-                  children: [
-                    _MobileTools(tools: project.tools, accent: accent),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Material(
-                        color: accent,
-                        borderRadius: BorderRadius.circular(14),
-                        child: InkWell(
+                Padding(
+                  padding: const EdgeInsets.only(right: 58),
+                  child: Row(
+                    children: [
+                      _MobileTools(tools: project.tools, accent: accent),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Material(
+                          color: accent,
                           borderRadius: BorderRadius.circular(14),
-                          onTap: () {
-                            final liveUrl = project.liveUrl;
-                            if (liveUrl != null) {
-                              _openUri(context, liveUrl);
-                            } else {
-                              onPreview();
-                            }
-                          },
-                          child: const SizedBox(
-                            height: 48,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 10),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Visit Project',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () {
+                              final liveUrl = project.liveUrl;
+                              if (liveUrl != null) {
+                                _openUri(context, liveUrl);
+                              } else {
+                                onPreview();
+                              }
+                            },
+                            child: const SizedBox(
+                              height: 48,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Visit Project',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(width: 7),
-                                    Icon(
-                                      LucideIcons.arrowUpRight,
-                                      size: 17,
-                                      color: Colors.white,
-                                    ),
-                                  ],
+                                      SizedBox(width: 7),
+                                      Icon(
+                                        LucideIcons.arrowUpRight,
+                                        size: 17,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             )
@@ -2790,17 +2804,9 @@ class _ContinuousProjectSection extends StatelessWidget {
 }
 
 class _MobileProjectHeader extends StatelessWidget {
-  const _MobileProjectHeader({
-    required this.selected,
-    required this.project,
-    required this.onTap,
-    this.onPrevious,
-    this.onNext,
-  });
+  const _MobileProjectHeader({required this.selected, required this.project});
   final int selected;
   final _ProjectData project;
-  final VoidCallback onTap;
-  final VoidCallback? onPrevious, onNext;
   @override
   Widget build(BuildContext context) {
     final accent = project.accentFor(context);
@@ -2814,58 +2820,24 @@ class _MobileProjectHeader extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 10, 18, 9),
             child: Row(
               children: [
-                _ProjectHeaderArrow(
-                  icon: LucideIcons.chevronLeft,
-                  tooltip: 'Previous project',
-                  onPressed: onPrevious,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 7,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${(selected + 1).toString().padLeft(2, '0')} / 06',
-                            style: _meta.copyWith(
-                              color: accent,
-                              shadows: _nightGlow(context, accent),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              project.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            LucideIcons.chevronsUpDown,
-                            size: 14,
-                            color: _monoFaint(context),
-                          ),
-                        ],
-                      ),
-                    ),
+                Text(
+                  '${(selected + 1).toString().padLeft(2, '0')} / 06',
+                  style: _meta.copyWith(
+                    color: accent,
+                    shadows: _nightGlow(context, accent),
                   ),
                 ),
-                const SizedBox(width: 6),
-                _ProjectHeaderArrow(
-                  icon: LucideIcons.chevronRight,
-                  tooltip: 'Next project',
-                  onPressed: onNext,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    project.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -2885,36 +2857,81 @@ class _MobileProjectHeader extends StatelessWidget {
   }
 }
 
-class _ProjectHeaderArrow extends StatelessWidget {
-  const _ProjectHeaderArrow({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) => IconButton(
-    tooltip: tooltip,
-    onPressed: onPressed,
-    visualDensity: VisualDensity.compact,
-    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-    padding: EdgeInsets.zero,
-    color: _monoInk(context),
-    disabledColor: _monoFaint(context).withValues(alpha: .35),
-    icon: Icon(icon, size: 17),
-  );
-}
-
 class _MobileHighlightCard extends StatefulWidget {
   const _MobileHighlightCard({required this.data, required this.accent});
   final (String, String, IconData) data;
   final Color accent;
   @override
   State<_MobileHighlightCard> createState() => _MobileHighlightCardState();
+}
+
+class _FloatingProjectNavigation extends StatelessWidget {
+  const _FloatingProjectNavigation({
+    required this.selected,
+    required this.accent,
+    required this.onTap,
+    this.onPrevious,
+    this.onNext,
+  });
+
+  final int selected;
+  final Color accent;
+  final VoidCallback onTap;
+  final VoidCallback? onPrevious, onNext;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Choose project, current project ${selected + 1} of 6',
+    child: Material(
+      color: accent,
+      elevation: 3,
+      shadowColor: const Color(0x33000000),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: const BorderSide(color: Color(0xFFDDDDD9)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Previous project',
+            onPressed: onPrevious,
+            color: Colors.white,
+            disabledColor: Colors.white38,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+            icon: const Icon(LucideIcons.chevronUp, size: 18),
+          ),
+          Container(width: 24, height: 1, color: Colors.white30),
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Text(
+                '${selected + 1}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          Container(width: 24, height: 1, color: Colors.white30),
+          IconButton(
+            tooltip: 'Next project',
+            onPressed: onNext,
+            color: Colors.white,
+            disabledColor: Colors.white38,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+            icon: const Icon(LucideIcons.chevronDown, size: 18),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _MobileHighlightCardState extends State<_MobileHighlightCard> {
@@ -3537,48 +3554,52 @@ class _ProjectVisual extends StatelessWidget {
     button: true,
     label: 'Expand ${project.name} screenshots',
     child: InkWell(
+      key: ValueKey('project-visual-${project.name}'),
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Center(
         child: project.phone
             ? compact
-                  ? SizedBox(
-                      width: 300,
-                      height: 330,
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 22,
-                            top: 38,
-                            child: _LargePhone(
-                              width: 142,
-                              accent: project.accentFor(context),
-                              screenshot: project.screenshot,
-                              label: '${project.name} Android app preview',
+                  ? FittedBox(
+                      fit: BoxFit.contain,
+                      child: SizedBox(
+                        width: 300,
+                        height: 330,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: 22,
+                              top: 38,
+                              child: _LargePhone(
+                                width: 142,
+                                accent: project.accentFor(context),
+                                screenshot: project.screenshot,
+                                label: '${project.name} Android app preview',
+                              ),
                             ),
-                          ),
-                          Positioned(
-                            right: 20,
-                            top: 30,
-                            child: _LargePhone(
-                              width: 142,
-                              accent: project.accentFor(context),
-                              screenshot: project.secondaryScreenshot,
-                              label: '${project.name} iOS app preview',
-                              rotation: .055,
+                            Positioned(
+                              right: 20,
+                              top: 30,
+                              child: _LargePhone(
+                                width: 142,
+                                accent: project.accentFor(context),
+                                screenshot: project.secondaryScreenshot,
+                                label: '${project.name} iOS app preview',
+                                rotation: .055,
+                              ),
                             ),
-                          ),
-                          const Positioned(
-                            left: 62,
-                            top: 0,
-                            child: _DeviceLabel(label: 'Android'),
-                          ),
-                          const Positioned(
-                            right: 66,
-                            top: 0,
-                            child: _DeviceLabel(label: 'iOS'),
-                          ),
-                        ],
+                            const Positioned(
+                              left: 62,
+                              top: 0,
+                              child: _DeviceLabel(label: 'Android'),
+                            ),
+                            const Positioned(
+                              right: 66,
+                              top: 0,
+                              child: _DeviceLabel(label: 'iOS'),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : SizedBox(
@@ -3619,7 +3640,10 @@ class _ProjectVisual extends StatelessWidget {
                     )
             : project.secondaryScreenshot != null
             ? compact
-                  ? _CompactResponsiveWebPreview(project: project)
+                  ? FittedBox(
+                      fit: BoxFit.contain,
+                      child: _CompactResponsiveWebPreview(project: project),
+                    )
                   : SizedBox(
                       width: 560,
                       height: 330,
@@ -3651,50 +3675,54 @@ class _ProjectVisual extends StatelessWidget {
                         ],
                       ),
                     )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: compact ? 320 : 470,
-                    height: compact ? 172 : 245,
-                    padding: EdgeInsets.all(compact ? 8 : 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A19),
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(compact ? 7 : 12),
+            : FittedBox(
+                fit: compact ? BoxFit.contain : BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: compact ? 320 : 470,
+                      height: compact ? 172 : 245,
+                      padding: EdgeInsets.all(compact ? 8 : 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A19),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(compact ? 7 : 12),
+                        ),
                       ),
-                    ),
-                    child: Container(
-                      decoration: const BoxDecoration(color: Colors.white),
-                      clipBehavior: Clip.antiAlias,
-                      child: project.screenshot == null
-                          ? Center(
-                              child: Icon(
-                                Icons.language_rounded,
-                                size: compact ? 28 : 55,
-                                color: project.accentFor(context),
+                      child: Container(
+                        decoration: const BoxDecoration(color: Colors.white),
+                        clipBehavior: Clip.antiAlias,
+                        child: project.screenshot == null
+                            ? Center(
+                                child: Icon(
+                                  Icons.language_rounded,
+                                  size: compact ? 28 : 55,
+                                  color: project.accentFor(context),
+                                ),
+                              )
+                            : Image.asset(
+                                project.screenshot!,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                filterQuality: FilterQuality.high,
+                                semanticLabel:
+                                    '${project.name} website preview',
                               ),
-                            )
-                          : Image.asset(
-                              project.screenshot!,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
-                              filterQuality: FilterQuality.high,
-                              semanticLabel: '${project.name} website preview',
-                            ),
-                    ),
-                  ),
-                  Container(
-                    width: compact ? 350 : 520,
-                    height: compact ? 10 : 15,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFBFC1C2),
-                      borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(18),
                       ),
                     ),
-                  ),
-                ],
+                    Container(
+                      width: compact ? 350 : 520,
+                      height: compact ? 10 : 15,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFBFC1C2),
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(18),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
       ),
     ),
@@ -4044,6 +4072,7 @@ class _LargePhone extends StatelessWidget {
   final double rotation;
   @override
   Widget build(BuildContext context) => Transform.rotate(
+    key: ValueKey('phone-preview-$label'),
     angle: rotation,
     child: Container(
       width: width,

@@ -67,4 +67,36 @@ void main() {
       expect(tester.takeException(), isNull, reason: '$label overflowed');
     }
   });
+
+  testWidgets('project showcase stays clear across responsive viewports', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    for (final size in [
+      const Size(360, 800),
+      const Size(390, 844),
+      const Size(412, 915),
+      const Size(768, 1024),
+      const Size(1440, 1000),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pumpWidget(
+        KeyedSubtree(key: ValueKey(size), child: const PortfolioApp()),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Projects').last);
+      await tester.pumpAndSettle(const Duration(milliseconds: 900));
+      await tester.tap(find.text('Scroll to explore').last);
+      await tester.pumpAndSettle(const Duration(milliseconds: 900));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'Projects overflowed at ${size.width}×${size.height}',
+      );
+    }
+  });
 }

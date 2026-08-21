@@ -2691,27 +2691,55 @@ class _ContinuousProjectSection extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  project.name,
-                  style: const TextStyle(
-                    fontSize: 31,
-                    height: 1.05,
-                    letterSpacing: -.7,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        project.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 29,
+                          height: 1.02,
+                          letterSpacing: -.7,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 145),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: .09),
+                          border: Border.all(
+                            color: accent.withValues(alpha: .28),
+                          ),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          project.category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _meta.copyWith(
+                            color: accent,
+                            fontSize: 8,
+                            letterSpacing: .8,
+                            shadows: _nightGlow(context, accent),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  project.category,
-                  style: _meta.copyWith(
-                    color: accent,
-                    fontSize: 11,
-                    shadows: _nightGlow(context, accent),
-                  ),
-                ),
-                const SizedBox(height: 8),
                 _PlatformAvailability(project: project),
-                const SizedBox(height: 22),
+                const SizedBox(height: 14),
                 _ExpandableProjectDescription(text: project.description),
                 const SizedBox(height: 10),
                 Expanded(
@@ -2808,44 +2836,64 @@ class _ExpandableProjectDescriptionState
     extends State<_ExpandableProjectDescription> {
   bool expanded = false;
 
+  Widget _toggle(BuildContext context) => InkWell(
+    onTap: () => setState(() => expanded = !expanded),
+    borderRadius: BorderRadius.circular(8),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
+      child: Text(
+        expanded ? 'Less' : 'More…',
+        style: TextStyle(
+          color: _monoInk(context),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          decoration: TextDecoration.underline,
+          decorationColor: _monoFaint(context),
+        ),
+      ),
+    ),
+  );
+
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      AnimatedSize(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.topCenter,
-        child: Text(
-          widget.text,
-          maxLines: expanded ? null : 2,
-          overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.4,
-            color: _monoMuted(context),
+  Widget build(BuildContext context) => AnimatedSize(
+    duration: const Duration(milliseconds: 220),
+    curve: Curves.easeOutCubic,
+    alignment: Alignment.topCenter,
+    child: expanded
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.text,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: _monoMuted(context),
+                ),
+              ),
+              const SizedBox(height: 2),
+              _toggle(context),
+            ],
+          )
+        : Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.text,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: _monoMuted(context),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 7),
+              _toggle(context),
+            ],
           ),
-        ),
-      ),
-      const SizedBox(height: 2),
-      InkWell(
-        onTap: () => setState(() => expanded = !expanded),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 1),
-          child: Text(
-            expanded ? 'Less' : 'More…',
-            style: TextStyle(
-              color: _monoInk(context),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              decoration: TextDecoration.underline,
-              decorationColor: _monoFaint(context),
-            ),
-          ),
-        ),
-      ),
-    ],
   );
 }
 

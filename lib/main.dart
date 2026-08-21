@@ -2682,10 +2682,10 @@ class _ContinuousProjectSection extends StatelessWidget {
     );
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        compact ? 28 : 154,
-        compact ? 70 : 56,
-        compact ? 28 : 56,
-        compact ? 92 : 56,
+        compact ? 22 : 154,
+        compact ? 64 : 56,
+        compact ? 22 : 56,
+        compact ? 12 : 56,
       ),
       child: compact
           ? Column(
@@ -2712,17 +2712,8 @@ class _ContinuousProjectSection extends StatelessWidget {
                 const SizedBox(height: 8),
                 _PlatformAvailability(project: project),
                 const SizedBox(height: 22),
-                Text(
-                  project.description,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: _monoMuted(context),
-                  ),
-                ),
-                const SizedBox(height: 14),
+                _ExpandableProjectDescription(text: project.description),
+                const SizedBox(height: 10),
                 Expanded(
                   child: _ProjectVisual(
                     project: project,
@@ -2803,6 +2794,61 @@ class _ContinuousProjectSection extends StatelessWidget {
   }
 }
 
+class _ExpandableProjectDescription extends StatefulWidget {
+  const _ExpandableProjectDescription({required this.text});
+
+  final String text;
+
+  @override
+  State<_ExpandableProjectDescription> createState() =>
+      _ExpandableProjectDescriptionState();
+}
+
+class _ExpandableProjectDescriptionState
+    extends State<_ExpandableProjectDescription> {
+  bool expanded = false;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      AnimatedSize(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: Text(
+          widget.text,
+          maxLines: expanded ? null : 2,
+          overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.4,
+            color: _monoMuted(context),
+          ),
+        ),
+      ),
+      const SizedBox(height: 2),
+      InkWell(
+        onTap: () => setState(() => expanded = !expanded),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 1),
+          child: Text(
+            expanded ? 'Less' : 'More…',
+            style: TextStyle(
+              color: _monoInk(context),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              decoration: TextDecoration.underline,
+              decorationColor: _monoFaint(context),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
 class _MobileProjectHeader extends StatelessWidget {
   const _MobileProjectHeader({required this.selected, required this.project});
   final int selected;
@@ -2829,14 +2875,42 @@ class _MobileProjectHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    project.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          project.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '—',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: _monoFaint(context),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          project.category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9,
+                            letterSpacing: .6,
+                            fontWeight: FontWeight.w700,
+                            color: _monoMuted(context),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -3563,25 +3637,25 @@ class _ProjectVisual extends StatelessWidget {
                   ? FittedBox(
                       fit: BoxFit.contain,
                       child: SizedBox(
-                        width: 300,
-                        height: 330,
+                        width: 340,
+                        height: 380,
                         child: Stack(
                           children: [
                             Positioned(
-                              left: 22,
-                              top: 38,
+                              left: 20,
+                              top: 42,
                               child: _LargePhone(
-                                width: 142,
+                                width: 160,
                                 accent: project.accentFor(context),
                                 screenshot: project.screenshot,
                                 label: '${project.name} Android app preview',
                               ),
                             ),
                             Positioned(
-                              right: 20,
-                              top: 30,
+                              right: 18,
+                              top: 34,
                               child: _LargePhone(
-                                width: 142,
+                                width: 160,
                                 accent: project.accentFor(context),
                                 screenshot: project.secondaryScreenshot,
                                 label: '${project.name} iOS app preview',
@@ -3589,12 +3663,12 @@ class _ProjectVisual extends StatelessWidget {
                               ),
                             ),
                             const Positioned(
-                              left: 62,
+                              left: 70,
                               top: 0,
                               child: _DeviceLabel(label: 'Android'),
                             ),
                             const Positioned(
-                              right: 66,
+                              right: 72,
                               top: 0,
                               child: _DeviceLabel(label: 'iOS'),
                             ),

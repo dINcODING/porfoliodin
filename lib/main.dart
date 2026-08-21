@@ -2197,7 +2197,7 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
     return LayoutBuilder(
       builder: (_, constraints) {
         _projectViewport = constraints.maxHeight;
-        final compact = constraints.maxWidth < 680;
+        final compact = constraints.maxWidth < 900;
         return Focus(
           autofocus: true,
           focusNode: _projectsFocus,
@@ -2289,24 +2289,13 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
                   child: _MobileProjectHeader(
                     selected: selected,
                     project: projects[selected],
-                  ),
-                ),
-              if (compact && !_showIntro)
-                Positioned(
-                  right: 16,
-                  bottom: 112,
-                  child: RepaintBoundary(
-                    child: _FloatingProjectNavigation(
-                      selected: selected,
-                      accent: projects[selected].accentFor(context),
-                      onTap: _showMobileProjectPicker,
-                      onPrevious: selected == 0
-                          ? null
-                          : () => _scrollToProject(selected - 1),
-                      onNext: selected == projects.length - 1
-                          ? null
-                          : () => _scrollToProject(selected + 1),
-                    ),
+                    onTap: _showMobileProjectPicker,
+                    onPrevious: selected == 0
+                        ? null
+                        : () => _scrollToProject(selected - 1),
+                    onNext: selected == projects.length - 1
+                        ? null
+                        : () => _scrollToProject(selected + 1),
                   ),
                 ),
             ],
@@ -2731,55 +2720,56 @@ class _ContinuousProjectSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Padding(
-                  // Keep the project actions clear of the independent floating
-                  // navigation in the lower-right thumb zone.
-                  padding: const EdgeInsets.only(right: 58),
-                  child: Row(
-                    children: [
-                      _MobileTools(tools: project.tools, accent: accent),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Material(
-                          color: accent,
+                Row(
+                  children: [
+                    _MobileTools(tools: project.tools, accent: accent),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Material(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(14),
+                        child: InkWell(
                           borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () {
-                              final liveUrl = project.liveUrl;
-                              if (liveUrl != null) {
-                                _openUri(context, liveUrl);
-                              } else {
-                                onPreview();
-                              }
-                            },
-                            child: const SizedBox(
-                              height: 48,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Visit Project',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
+                          onTap: () {
+                            final liveUrl = project.liveUrl;
+                            if (liveUrl != null) {
+                              _openUri(context, liveUrl);
+                            } else {
+                              onPreview();
+                            }
+                          },
+                          child: const SizedBox(
+                            height: 48,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Visit Project',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(width: 7),
-                                  Icon(
-                                    LucideIcons.arrowUpRight,
-                                    size: 17,
-                                    color: Colors.white,
-                                  ),
-                                ],
+                                    SizedBox(width: 7),
+                                    Icon(
+                                      LucideIcons.arrowUpRight,
+                                      size: 17,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             )
@@ -2800,9 +2790,17 @@ class _ContinuousProjectSection extends StatelessWidget {
 }
 
 class _MobileProjectHeader extends StatelessWidget {
-  const _MobileProjectHeader({required this.selected, required this.project});
+  const _MobileProjectHeader({
+    required this.selected,
+    required this.project,
+    required this.onTap,
+    this.onPrevious,
+    this.onNext,
+  });
   final int selected;
   final _ProjectData project;
+  final VoidCallback onTap;
+  final VoidCallback? onPrevious, onNext;
   @override
   Widget build(BuildContext context) {
     final accent = project.accentFor(context);
@@ -2816,24 +2814,58 @@ class _MobileProjectHeader extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 10, 18, 9),
             child: Row(
               children: [
-                Text(
-                  '${(selected + 1).toString().padLeft(2, '0')} / 06',
-                  style: _meta.copyWith(
-                    color: accent,
-                    shadows: _nightGlow(context, accent),
-                  ),
+                _ProjectHeaderArrow(
+                  icon: LucideIcons.chevronLeft,
+                  tooltip: 'Previous project',
+                  onPressed: onPrevious,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    project.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 7,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${(selected + 1).toString().padLeft(2, '0')} / 06',
+                            style: _meta.copyWith(
+                              color: accent,
+                              shadows: _nightGlow(context, accent),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              project.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            LucideIcons.chevronsUpDown,
+                            size: 14,
+                            color: _monoFaint(context),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ),
+                const SizedBox(width: 6),
+                _ProjectHeaderArrow(
+                  icon: LucideIcons.chevronRight,
+                  tooltip: 'Next project',
+                  onPressed: onNext,
                 ),
               ],
             ),
@@ -2853,79 +2885,36 @@ class _MobileProjectHeader extends StatelessWidget {
   }
 }
 
+class _ProjectHeaderArrow extends StatelessWidget {
+  const _ProjectHeaderArrow({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: tooltip,
+    onPressed: onPressed,
+    visualDensity: VisualDensity.compact,
+    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+    padding: EdgeInsets.zero,
+    color: _monoInk(context),
+    disabledColor: _monoFaint(context).withValues(alpha: .35),
+    icon: Icon(icon, size: 17),
+  );
+}
+
 class _MobileHighlightCard extends StatefulWidget {
   const _MobileHighlightCard({required this.data, required this.accent});
   final (String, String, IconData) data;
   final Color accent;
   @override
   State<_MobileHighlightCard> createState() => _MobileHighlightCardState();
-}
-
-class _FloatingProjectNavigation extends StatelessWidget {
-  const _FloatingProjectNavigation({
-    required this.selected,
-    required this.accent,
-    required this.onTap,
-    this.onPrevious,
-    this.onNext,
-  });
-  final int selected;
-  final Color accent;
-  final VoidCallback onTap;
-  final VoidCallback? onPrevious, onNext;
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: 'Choose project, current project ${selected + 1} of 6',
-    child: Material(
-      color: accent,
-      elevation: 3,
-      shadowColor: const Color(0x33000000),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-        side: const BorderSide(color: Color(0xFFDDDDD9)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            tooltip: 'Previous project',
-            onPressed: onPrevious,
-            color: Colors.white,
-            disabledColor: Colors.white38,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-            icon: const Icon(LucideIcons.chevronUp, size: 18),
-          ),
-          Container(width: 24, height: 1, color: Colors.white30),
-          InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text(
-                '${selected + 1}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ),
-          Container(width: 24, height: 1, color: Colors.white30),
-          IconButton(
-            tooltip: 'Next project',
-            onPressed: onNext,
-            color: Colors.white,
-            disabledColor: Colors.white38,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-            icon: const Icon(LucideIcons.chevronDown, size: 18),
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 class _MobileHighlightCardState extends State<_MobileHighlightCard> {
@@ -3183,20 +3172,24 @@ class _ProjectsIntro extends StatelessWidget {
                         vertical: 10,
                         horizontal: 2,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Scroll to explore',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: .2,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Scroll to explore',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: .2,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 12),
-                          Icon(LucideIcons.arrowDown, size: 20),
-                        ],
+                            SizedBox(width: 12),
+                            Icon(LucideIcons.arrowDown, size: 20),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -4335,12 +4328,69 @@ class _SkillsFace extends StatelessWidget {
           );
           if (compact) {
             return Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 24, 82),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 82),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  copy,
-                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Skills',
+                          style: TextStyle(
+                            fontSize: 34,
+                            height: .94,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -2.6,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: _monoBorder(context)),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          '6 CAPABILITIES',
+                          style: _meta.copyWith(
+                            color: _monoMuted(context),
+                            fontSize: 9,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'FULL STACK ENGINEERING',
+                    style: TextStyle(
+                      color: _nightAccent(context, const Color(0xFF299FA4)),
+                      fontSize: 12,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w800,
+                      shadows: _nightGlow(
+                        context,
+                        _nightAccent(context, const Color(0xFF299FA4)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'From product thinking to production systems — swipe through the layers I use to ship complete digital products.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: _monoMuted(context),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Expanded(
                     child: _ArchitectureStack(
                       animate: animate,
@@ -4427,6 +4477,15 @@ class _ArchitectureStackState extends State<_ArchitectureStack> {
   double expansion = 1;
   int? focused;
   int? pinned;
+  final PageController _mobilePageController = PageController(
+    viewportFraction: .92,
+  );
+
+  @override
+  void dispose() {
+    _mobilePageController.dispose();
+    super.dispose();
+  }
 
   static const layers = <(String, String, Color, IconData, List<String>)>[
     (
@@ -4546,20 +4605,83 @@ class _ArchitectureStackState extends State<_ArchitectureStack> {
     );
   }
 
-  Widget _buildMobileExplorer() => ListView.separated(
-    padding: const EdgeInsets.only(bottom: 12),
-    itemCount: layers.length,
-    separatorBuilder: (_, _) => const SizedBox(height: 10),
-    itemBuilder: (_, index) {
-      final expanded = pinned == index;
-      return _MobileCapabilityCard(
-        index: index,
-        data: layers[index],
-        expanded: expanded,
-        onPressed: () => setState(() => pinned = expanded ? null : index),
-      );
-    },
-  );
+  Widget _buildMobileExplorer() {
+    final selected = pinned ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 38,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(right: 12),
+            itemCount: layers.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 7),
+            itemBuilder: (_, index) => _MobileSkillTab(
+              number: index + 1,
+              label: layers[index].$1,
+              selected: selected == index,
+              accent: _skillAccent(index),
+              onPressed: () {
+                setState(() => pinned = index);
+                _mobilePageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 320),
+                  curve: Curves.easeOutCubic,
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: PageView.builder(
+            controller: _mobilePageController,
+            itemCount: layers.length,
+            onPageChanged: (index) => setState(() => pinned = index),
+            itemBuilder: (_, index) => Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: _MobileSkillShowcaseCard(
+                index: index,
+                data: layers[index],
+                accent: _skillAccent(index),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < layers.length; index++)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  width: selected == index ? 20 : 5,
+                  height: 5,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: selected == index
+                        ? _skillAccent(index)
+                        : _monoBorder(context),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _skillAccent(int index) => const [
+    Color(0xFF35D5C4),
+    Color(0xFF4AA8FF),
+    Color(0xFF9A82FF),
+    Color(0xFF63D779),
+    Color(0xFFFFB84A),
+    Color(0xFFD2D7E0),
+  ][index];
 
   // ignore: unused_element
   Widget _buildLayer(int index, double scale, double entrance) {
@@ -5031,96 +5153,222 @@ class _CapabilityEvidence extends StatelessWidget {
   }
 }
 
-class _MobileCapabilityCard extends StatelessWidget {
-  const _MobileCapabilityCard({
-    required this.index,
-    required this.data,
-    required this.expanded,
+class _MobileSkillTab extends StatelessWidget {
+  const _MobileSkillTab({
+    required this.number,
+    required this.label,
+    required this.selected,
+    required this.accent,
     required this.onPressed,
   });
-  final int index;
-  final (String, String, Color, IconData, List<String>) data;
-  final bool expanded;
+
+  final int number;
+  final String label;
+  final bool selected;
+  final Color accent;
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 220),
-    decoration: BoxDecoration(
-      color: expanded ? data.$3 : Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: expanded ? _monoInk(context) : _monoBorder(context),
+  Widget build(BuildContext context) {
+    final foreground = selected ? Colors.black : _monoMuted(context);
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(99),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: selected ? accent : Colors.transparent,
+          border: Border.all(color: selected ? accent : _monoBorder(context)),
+          borderRadius: BorderRadius.circular(99),
+          boxShadow: selected && _isDark(context)
+              ? [
+                  BoxShadow(
+                    color: accent.withValues(alpha: .34),
+                    blurRadius: 16,
+                  ),
+                ]
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              number.toString().padLeft(2, '0'),
+              style: TextStyle(
+                color: foreground,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              label.split(' ').first,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 10,
+                letterSpacing: .5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-    child: Column(
-      children: [
-        InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Row(
-              children: [
-                Icon(
-                  data.$4,
-                  size: 24,
-                  color: expanded ? ink : _monoInk(context),
+    );
+  }
+}
+
+class _MobileSkillShowcaseCard extends StatelessWidget {
+  const _MobileSkillShowcaseCard({
+    required this.index,
+    required this.data,
+    required this.accent,
+  });
+
+  final int index;
+  final (String, String, Color, IconData, List<String>) data;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: BoxDecoration(
+        color: dark
+            ? const Color(0xFF08090C)
+            : Color.alphaBlend(accent.withValues(alpha: .08), Colors.white),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: dark
+              ? accent.withValues(alpha: .72)
+              : accent.withValues(alpha: .38),
+        ),
+        boxShadow: dark
+            ? [
+                BoxShadow(
+                  color: accent.withValues(alpha: .17),
+                  blurRadius: 26,
+                  spreadRadius: 1,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
+                const BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 12),
+                ),
+              ]
+            : const [
+                BoxShadow(
+                  color: Color(0x12000000),
+                  blurRadius: 22,
+                  offset: Offset(0, 10),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: dark
+                      ? [
+                          BoxShadow(
+                            color: accent.withValues(alpha: .38),
+                            blurRadius: 18,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(data.$4, color: Colors.black, size: 27),
+              ),
+              const Spacer(),
+              Text(
+                '${(index + 1).toString().padLeft(2, '0')} / 06',
+                style: _meta.copyWith(
+                  color: dark
+                      ? accent.withValues(alpha: .9)
+                      : _monoMuted(context),
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            data.$1,
+            style: TextStyle(
+              color: _monoInk(context),
+              fontSize: 23,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.7,
+              shadows: dark ? _nightGlow(context, accent) : null,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            data.$2,
+            style: TextStyle(
+              color: _monoMuted(context),
+              fontSize: 13,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final technology in data.$5)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: dark
+                        ? accent.withValues(alpha: .09)
+                        : Colors.white.withValues(alpha: .82),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: accent.withValues(alpha: dark ? .36 : .25),
+                    ),
+                  ),
                   child: Text(
-                    data.$1,
+                    technology,
                     style: TextStyle(
-                      color: expanded ? ink : _monoInk(context),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      color: _monoInk(context),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                Icon(
-                  expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
-                  size: 22,
-                ),
-              ],
-            ),
+            ],
           ),
-        ),
-        if (expanded)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 17),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.$2,
-                  style: const TextStyle(
-                    color: Color(0xFF555552),
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: [
-                    for (final technology in data.$5)
-                      Chip(
-                        label: Text(
-                          technology,
-                          style: const TextStyle(color: ink, fontSize: 14),
-                        ),
-                        backgroundColor: Colors.white.withValues(alpha: .9),
-                        side: BorderSide.none,
-                      ),
-                  ],
-                ),
-              ],
-            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(LucideIcons.moveHorizontal, size: 14, color: accent),
+              const SizedBox(width: 7),
+              Text(
+                index == 0 ? 'SWIPE TO EXPLORE' : 'KEEP SWIPING',
+                style: _meta.copyWith(color: _monoMuted(context), fontSize: 9),
+              ),
+            ],
           ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 // ignore: unused_element

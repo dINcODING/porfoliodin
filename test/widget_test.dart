@@ -78,7 +78,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('contact face exposes the verified GitHub destination', (
+  testWidgets('contact face exposes verified contact destinations', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -91,7 +91,13 @@ void main() {
     await tester.tap(find.text('Contact').last);
     await tester.pumpAndSettle(const Duration(milliseconds: 900));
 
-    expect(find.text('Contact on GitHub'), findsOneWidget);
+    expect(find.text('Send an email'), findsOneWidget);
+    expect(find.text('WhatsApp'), findsOneWidget);
+    expect(find.text(contactEmail), findsOneWidget);
+    expect(find.text(contactPhone), findsOneWidget);
+    expect(contactEmailUri.path, contactEmail);
+    expect(contactPhoneUri.path, contactPhone);
+    expect(whatsAppUri.toString(), 'https://wa.me/60133229619');
     expect(githubProfileUri.toString(), 'https://github.com/dINcODING');
   });
 

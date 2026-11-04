@@ -23,7 +23,21 @@ Future<void> _openUri(BuildContext context, Uri uri) async {
 const ink = Color(0xFF151515);
 const blue = Color(0xFF246BFD);
 const paper = Color(0xFFF3F3F1);
+const contactEmail = 'nuruddinm969@gmail.com';
+const contactPhone = '+60133229619';
 final githubProfileUri = Uri.parse('https://github.com/dINcODING');
+final contactEmailUri = Uri(
+  scheme: 'mailto',
+  path: contactEmail,
+  queryParameters: const {'subject': 'Portfolio enquiry — Nuruddin Mahmud'},
+);
+final resumeRequestUri = Uri(
+  scheme: 'mailto',
+  path: contactEmail,
+  queryParameters: const {'subject': 'Résumé request — Nuruddin Mahmud'},
+);
+final contactPhoneUri = Uri(scheme: 'tel', path: contactPhone);
+final whatsAppUri = Uri.parse('https://wa.me/60133229619');
 const basePitch = -8 * math.pi / 180;
 // Flutter's Y-axis transform direction is opposite CSS's screen-space
 // convention; -12° produces the requested visible right-hand plane.
@@ -5684,9 +5698,9 @@ class _AboutFace extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
-                onPressed: () => _openUri(context, githubProfileUri),
-                icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                label: const Text('View GitHub'),
+                onPressed: () => _openUri(context, resumeRequestUri),
+                icon: const Icon(Icons.mail_outline_rounded, size: 15),
+                label: const Text('Request résumé'),
                 style: TextButton.styleFrom(
                   foregroundColor: _monoInk(context),
                   textStyle: const TextStyle(
@@ -5734,15 +5748,39 @@ class _ContactFace extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           Text(
-            'Available for enquiries on GitHub',
+            'Available by email or WhatsApp',
             style: TextStyle(fontSize: 16, color: _monoMuted(context)),
           ),
+          const SizedBox(height: 6),
+          Text(
+            contactEmail,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _monoInk(context),
+            ),
+          ),
+          Text(
+            contactPhone,
+            style: TextStyle(fontSize: 13, color: _monoMuted(context)),
+          ),
           const SizedBox(height: 14),
-          _ActionButton(
-            label: 'Contact on GitHub',
-            dark: true,
-            icon: Icons.arrow_forward_rounded,
-            onPressed: () => _openUri(context, githubProfileUri),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _ActionButton(
+                label: 'Send an email',
+                dark: true,
+                icon: Icons.mail_outline_rounded,
+                onPressed: () => _openUri(context, contactEmailUri),
+              ),
+              _ActionButton(
+                label: 'WhatsApp',
+                icon: Icons.chat_bubble_outline_rounded,
+                onPressed: () => _openUri(context, whatsAppUri),
+              ),
+            ],
           ),
           const Spacer(),
           const Divider(),
@@ -5751,6 +5789,14 @@ class _ContactFace extends StatelessWidget {
             spacing: 28,
             runSpacing: 10,
             children: [
+              _TextLink(
+                label: 'Email',
+                onTap: () => _openUri(context, contactEmailUri),
+              ),
+              _TextLink(
+                label: 'Call',
+                onTap: () => _openUri(context, contactPhoneUri),
+              ),
               _TextLink(
                 label: 'GitHub',
                 onTap: () => _openUri(context, githubProfileUri),

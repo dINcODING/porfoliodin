@@ -8,7 +8,7 @@
 PRODUCT_NAME = porfoliodin
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.porfoliodin
+PRODUCT_BUNDLE_IDENTIFIER = com.dincoding.porfoliodin
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Nuruddin Mahmud. All rights reserved.

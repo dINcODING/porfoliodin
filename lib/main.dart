@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/gestures.dart';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:porfoliodin/portfolio_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void main() {
@@ -22,6 +23,7 @@ Future<void> _openUri(BuildContext context, Uri uri) async {
 const ink = Color(0xFF151515);
 const blue = Color(0xFF246BFD);
 const paper = Color(0xFFF3F3F1);
+final githubProfileUri = Uri.parse('https://github.com/dINcODING');
 const basePitch = -8 * math.pi / 180;
 // Flutter's Y-axis transform direction is opposite CSS's screen-space
 // convention; -12° produces the requested visible right-hand plane.
@@ -78,33 +80,11 @@ class PortfolioApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: paper,
         colorScheme: ColorScheme.fromSeed(seedColor: blue, surface: paper),
-        fontFamily: 'Helvetica Neue',
         textTheme: const TextTheme(bodyMedium: TextStyle(color: ink)),
       ),
       home: const CubePortfolio(),
     );
   }
-}
-
-enum CubeFace { home, projects, caseStudy, skills, about, contact }
-
-extension FaceData on CubeFace {
-  String get label => switch (this) {
-    CubeFace.home => 'HOME',
-    CubeFace.projects => 'PROJECTS',
-    CubeFace.caseStudy => 'EXPERIENCE',
-    CubeFace.skills => 'SKILLS',
-    CubeFace.about => 'ABOUT',
-    CubeFace.contact => 'CONTACT',
-  };
-  (double, double) get angle => switch (this) {
-    CubeFace.home => (0, 0),
-    CubeFace.projects => (0, -math.pi / 2),
-    CubeFace.caseStudy => (0, math.pi),
-    CubeFace.skills => (0, math.pi / 2),
-    CubeFace.about => (-math.pi / 2, 0),
-    CubeFace.contact => (math.pi / 2, 0),
-  };
 }
 
 class CubePortfolio extends StatefulWidget {
@@ -147,7 +127,7 @@ class _CubePortfolioState extends State<CubePortfolio>
     _pageScroll.addListener(_updateScrollProgress);
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final face = _faceForPath(Uri.base.path);
+      final face = faceForUri(Uri.base);
       if (face != CubeFace.home) _navigate(face, updateUrl: false);
     });
   }
@@ -173,16 +153,8 @@ class _CubePortfolioState extends State<CubePortfolio>
       _pageOffset = 0;
       _visitedFaces.add(face);
     });
-    final path = switch (face) {
-      CubeFace.home => '/',
-      CubeFace.projects => '/project',
-      CubeFace.caseStudy => '/experience',
-      CubeFace.skills => '/skills',
-      CubeFace.about => '/about',
-      CubeFace.contact => '/contact',
-    };
     if (updateUrl) {
-      SystemNavigator.routeInformationUpdated(uri: Uri(path: path));
+      SystemNavigator.routeInformationUpdated(uri: uriForFace(face, Uri.base));
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pageScroll.hasClients) _pageScroll.jumpTo(0);
@@ -211,20 +183,11 @@ class _CubePortfolioState extends State<CubePortfolio>
 
   void _toggleTheme() => setState(() => _darkMode = !_darkMode);
 
-  CubeFace _faceForPath(String path) => switch (path) {
-    '/project' => CubeFace.projects,
-    '/work' || '/experience' => CubeFace.caseStudy,
-    '/skills' => CubeFace.skills,
-    '/about' => CubeFace.about,
-    '/contact' => CubeFace.contact,
-    _ => CubeFace.home,
-  };
-
   @override
   Future<bool> didPushRouteInformation(
     RouteInformation routeInformation,
   ) async {
-    _navigate(_faceForPath(routeInformation.uri.path), updateUrl: false);
+    _navigate(faceForUri(routeInformation.uri), updateUrl: false);
     return true;
   }
 
@@ -389,12 +352,26 @@ class _CubePortfolioState extends State<CubePortfolio>
                                           blurRadius: 64,
                                           spreadRadius: 8,
                                         ),
-                                      ] else
-                                        const BoxShadow(
-                                          color: Color(0x10000000),
-                                          blurRadius: 28,
-                                          offset: Offset(0, 10),
+                                      ] else ...const [
+                                        BoxShadow(
+                                          color: Color(0x1F000000),
+                                          blurRadius: 14,
+                                          spreadRadius: 1,
+                                          offset: Offset(0, 2),
                                         ),
+                                        BoxShadow(
+                                          color: Color(0x1A000000),
+                                          blurRadius: 38,
+                                          spreadRadius: 4,
+                                          offset: Offset(0, 16),
+                                        ),
+                                        BoxShadow(
+                                          color: Color(0x10000000),
+                                          blurRadius: 78,
+                                          spreadRadius: 10,
+                                          offset: Offset(0, 28),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                   clipBehavior: Clip.antiAlias,
@@ -1199,17 +1176,7 @@ class _Cube extends StatelessWidget {
       onContact: () => onGo(CubeFace.contact),
     ),
     CubeFace.projects => _ProjectsFace(onContact: () => onGo(CubeFace.contact)),
-    CubeFace.caseStudy => _CaseFace(
-      onView: () {
-        if (scrollController.hasClients) {
-          scrollController.animateTo(
-            height,
-            duration: const Duration(milliseconds: 650),
-            curve: Curves.easeOutCubic,
-          );
-        }
-      },
-    ),
+    CubeFace.caseStudy => const _CaseFace(),
     CubeFace.skills => _SkillsFace(
       animate: active == face && settled,
       scrollOffset: scrollOffset,
@@ -1793,8 +1760,6 @@ class _ProjectsFace extends StatefulWidget {
 class _ProjectsFaceState extends State<_ProjectsFace> {
   int selected = 0;
   bool _showIntro = true;
-  bool _scrolling = false;
-  double _scrollDelta = 0;
   final ScrollController _projectsScroll = ScrollController();
   double _projectViewport = 1;
   final FocusNode _projectsFocus = FocusNode();
@@ -2165,33 +2130,6 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
       false,
     ),
   ];
-  void _scrollProjects(double delta) {
-    if (_scrolling) return;
-    _scrollDelta += delta;
-    if (_scrollDelta.abs() < 42) return;
-    final direction = _scrollDelta > 0 ? 1 : -1;
-    _scrollDelta = 0;
-    final currentPage = _showIntro ? 0 : selected + 1;
-    final nextPage = (currentPage + direction).clamp(0, projects.length);
-    if (nextPage == currentPage) return;
-    setState(() {
-      _showIntro = nextPage == 0;
-      if (!_showIntro) selected = nextPage - 1;
-      _scrolling = true;
-    });
-    Future<void>.delayed(const Duration(milliseconds: 260), () {
-      if (mounted) _scrolling = false;
-    });
-  }
-
-  void _selectProject(int value) {
-    if (!_showIntro && value == selected) return;
-    setState(() {
-      _showIntro = false;
-      selected = value;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -2315,200 +2253,6 @@ class _ProjectsFaceState extends State<_ProjectsFace> {
       },
     );
   }
-
-  // Kept temporarily as a layout fallback while the continuous version settles.
-  // ignore: unused_element
-  Widget _legacyBuild(BuildContext context) => Listener(
-    behavior: HitTestBehavior.opaque,
-    onPointerSignal: (event) {
-      if (event is PointerScrollEvent) _scrollProjects(event.scrollDelta.dy);
-    },
-    child: GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onVerticalDragEnd: (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        if (velocity.abs() > 120) _scrollProjects(-velocity);
-      },
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 260),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeOutCubic,
-        transitionBuilder: (child, animation) {
-          final offset = Tween<Offset>(
-            begin: const Offset(0, .015),
-            end: Offset.zero,
-          ).animate(animation);
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(position: offset, child: child),
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey(_showIntro ? -1 : selected),
-          child: _showIntro
-              ? _ProjectsIntro(onContinue: () => _scrollProjects(100))
-              : _FaceFrame(
-                  number: '02',
-                  title: 'PROJECTS',
-                  child: LayoutBuilder(
-                    builder: (_, c) {
-                      final compact = c.maxWidth < 680;
-                      final project = projects[selected];
-                      final copy = Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '0${selected + 1}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              color: Color(0xFFCACAC8),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            project.name,
-                            style: TextStyle(
-                              fontSize: compact ? 29 : 31,
-                              height: 1.05,
-                              letterSpacing: -.8,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            project.category,
-                            style: _meta.copyWith(
-                              color: project.accentFor(context),
-                              fontSize: 12,
-                              shadows: _nightGlow(
-                                context,
-                                project.accentFor(context),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          Text(
-                            project.description,
-                            style: TextStyle(
-                              fontSize: 16,
-                              height: 1.45,
-                              color: _monoMuted(context),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: project.tools
-                                .map((tool) => _Badge(tool))
-                                .toList(),
-                          ),
-                          const SizedBox(height: 12),
-                          _ProjectActions(project: project),
-                        ],
-                      );
-                      final projectBody = Expanded(
-                        child: compact
-                            ? Column(
-                                children: [
-                                  Expanded(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.topLeft,
-                                      child: SizedBox(
-                                        width: c.maxWidth,
-                                        child: copy,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: 135,
-                                    child: _ProjectVisual(
-                                      project: project,
-                                      compact: true,
-                                      onTap: () {},
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Row(
-                                children: [
-                                  SizedBox(width: 310, child: copy),
-                                  const SizedBox(width: 24),
-                                  Expanded(
-                                    child: _ProjectShowcase(
-                                      project: project,
-                                      onPreview: () {},
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      );
-                      if (!compact) {
-                        return Row(
-                          children: [
-                            SizedBox(
-                              width: 64,
-                              child: _ProjectSelector(
-                                selected: selected,
-                                count: projects.length,
-                                names: projects
-                                    .map((project) => project.name)
-                                    .toList(),
-                                onSelected: _selectProject,
-                              ),
-                            ),
-                            const SizedBox(width: 34),
-                            Expanded(child: Column(children: [projectBody])),
-                          ],
-                        );
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          projectBody,
-                          Row(
-                            children: List.generate(
-                              projects.length,
-                              (i) => Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: InkWell(
-                                  onTap: () => _selectProject(i),
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: i == selected ? ink : Colors.white,
-                                      border: Border.all(color: ink),
-                                    ),
-                                    child: Text(
-                                      '${i + 1}',
-                                      style: TextStyle(
-                                        color: i == selected
-                                            ? Colors.white
-                                            : ink,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-        ),
-      ),
-    ),
-  );
 }
 
 class _ProjectData {
@@ -2539,21 +2283,21 @@ class _ProjectData {
   };
   Color accentFor(BuildContext context) => _nightAccent(context, accent);
   String? get screenshot => switch (name) {
-    'Solatiy' => 'assets/images/solatiy-home.png',
-    'Tadabbur Tazakkur Quran' => 'assets/images/tadabbur-mushaf.png',
-    'HRMS' => 'assets/images/hrms-employee.png',
-    'AZ Integrated' => 'assets/images/az-integrated-home.png',
-    'nasyrulquran.com' => 'assets/images/nasyrulquran-home.png',
-    'Super Segar' => 'assets/images/super-segar-home.png',
+    'Solatiy' => 'assets/images/solatiy-home.webp',
+    'Tadabbur Tazakkur Quran' => 'assets/images/tadabbur-mushaf.webp',
+    'HRMS' => 'assets/images/hrms-employee.webp',
+    'AZ Integrated' => 'assets/images/az-integrated-home.webp',
+    'nasyrulquran.com' => 'assets/images/nasyrulquran-home.webp',
+    'Super Segar' => 'assets/images/super-segar-home.webp',
     _ => null,
   };
   String? get secondaryScreenshot => switch (name) {
-    'Solatiy' => 'assets/images/solatiy-puzzle.png',
-    'Tadabbur Tazakkur Quran' => 'assets/images/tadabbur-reflection.png',
-    'HRMS' => 'assets/images/hrms-admin.png',
-    'AZ Integrated' => 'assets/images/az-integrated-mobile.png',
-    'nasyrulquran.com' => 'assets/images/nasyrulquran-mobile.png',
-    'Super Segar' => 'assets/images/super-segar-mobile.png',
+    'Solatiy' => 'assets/images/solatiy-puzzle.webp',
+    'Tadabbur Tazakkur Quran' => 'assets/images/tadabbur-reflection.webp',
+    'HRMS' => 'assets/images/hrms-admin.webp',
+    'AZ Integrated' => 'assets/images/az-integrated-mobile.webp',
+    'nasyrulquran.com' => 'assets/images/nasyrulquran-mobile.webp',
+    'Super Segar' => 'assets/images/super-segar-mobile.webp',
     _ => null,
   };
 }
@@ -4109,75 +3853,628 @@ class _MiniPhone extends StatelessWidget {
   );
 }
 
+class _ExperienceData {
+  const _ExperienceData({
+    required this.year,
+    required this.role,
+    required this.period,
+    required this.summary,
+    required this.highlights,
+    required this.tools,
+  });
+
+  final String year, role, period, summary;
+  final List<String> highlights, tools;
+}
+
+const _experiences = [
+  _ExperienceData(
+    year: '2023',
+    role: 'Software Developer',
+    period: '2023 — Present',
+    summary:
+        'Independent product development spanning discovery, interface design, architecture, implementation, and release.',
+    highlights: [
+      'Built complete mobile and web product flows from idea to production.',
+      'Connected responsive interfaces to authentication, content, and data services.',
+      'Designed maintainable foundations for continued product development.',
+    ],
+    tools: ['Flutter', 'Dart', 'Firebase', 'REST APIs', 'Git'],
+  ),
+  _ExperienceData(
+    year: '2024',
+    role: 'Mobile & Digital Product Developer',
+    period: '2024',
+    summary:
+        'Focused on practical mobile experiences, structured content, and dependable product behaviour across devices.',
+    highlights: [
+      'Delivered responsive Android and iOS experiences.',
+      'Implemented offline-friendly content and application state.',
+      'Refined interaction details around real user needs and constraints.',
+    ],
+    tools: ['Flutter', 'Android', 'SQLite', 'Firebase', 'Figma'],
+  ),
+  _ExperienceData(
+    year: '2025',
+    role: 'Full-Stack Developer',
+    period: '2025',
+    summary:
+        'Expanded delivery across client applications, backend logic, operational systems, and production tooling.',
+    highlights: [
+      'Built reusable frontend and backend product components.',
+      'Improved data workflows, edge-case handling, and release readiness.',
+      'Carried technical work through testing, deployment, and operations.',
+    ],
+    tools: ['Flutter', 'Laravel', 'Firebase', 'JavaScript', 'GitHub'],
+  ),
+];
+
 class _CaseFace extends StatelessWidget {
-  const _CaseFace({required this.onView});
-  final VoidCallback onView;
+  const _CaseFace();
+
+  void _openExperience(BuildContext context, _ExperienceData experience) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: .48),
+      builder: (_) => BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+        child: _ExperienceDialog(experience: experience),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => _FaceFrame(
     number: '03',
-    title: 'FEATURED CASE STUDY',
+    title: 'EXPERIENCE',
     child: LayoutBuilder(
       builder: (_, c) {
-        final compact = c.maxWidth < 650;
-        final mockup = Center(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: -5, end: 5),
-            duration: const Duration(seconds: 3),
-            curve: Curves.easeInOut,
-            builder: (_, y, child) =>
-                Transform.translate(offset: Offset(0, y), child: child),
-            onEnd: () {},
-            child: _LargePhone(width: compact ? 92 : 190),
-          ),
-        );
-        final details = Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        final compact = c.maxWidth < 700;
+        final heading = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'MARI\nMENDIRIKAN\nSOLAT',
-              style: TextStyle(
-                fontSize: compact ? 27 : 35,
-                height: .93,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1.6,
+              'FULLSTACK DEVELOPER',
+              style: _meta.copyWith(
+                color: _nightAccent(context, const Color(0xFF299FA4)),
+                fontSize: compact ? 9 : 11,
               ),
             ),
-            const SizedBox(height: 18),
-            const Wrap(
-              spacing: 5,
-              runSpacing: 5,
-              children: [
-                _Badge('Flutter'),
-                _Badge('Firebase'),
-                _Badge('Offline'),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              'Experience',
+              style: TextStyle(
+                fontSize: compact ? 38 : 52,
+                height: .95,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -2,
+              ),
             ),
-            const SizedBox(height: 22),
-            _ActionButton(
-              label: 'View Case Study',
-              dark: true,
-              onPressed: onView,
+            SizedBox(height: compact ? 10 : 18),
+            Text(
+              'Building software beyond the code.\nFrom development and deployment\nto real-world technical operations.',
+              style: TextStyle(
+                color: _monoMuted(context),
+                fontSize: compact ? 13 : 18,
+                height: 1.35,
+              ),
             ),
           ],
         );
+        final folders = LayoutBuilder(
+          builder: (_, folderArea) {
+            final stackHeight = math.min(
+              folderArea.maxHeight - 48,
+              folderArea.maxWidth * .72,
+            );
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: math.max(170, stackHeight),
+                    width: folderArea.maxWidth,
+                    child: _ExperienceFolderStack(
+                      onOpen: (experience) =>
+                          _openExperience(context, experience),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    compact
+                        ? 'Tap a folder to open'
+                        : '– Hover & click to open –',
+                    style: TextStyle(
+                      color: _monoMuted(context),
+                      fontSize: compact ? 13 : 18,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
         if (compact) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 5, child: mockup),
-              Expanded(flex: 5, child: details),
+              heading,
+              const SizedBox(height: 8),
+              Expanded(child: folders),
             ],
           );
         }
         return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 6, child: mockup),
-            Expanded(flex: 5, child: details),
+            SizedBox(width: 350, child: heading),
+            const SizedBox(width: 24),
+            Expanded(child: folders),
           ],
         );
       },
     ),
   );
+}
+
+class _ExperienceFolderStack extends StatefulWidget {
+  const _ExperienceFolderStack({required this.onOpen});
+  final ValueChanged<_ExperienceData> onOpen;
+
+  @override
+  State<_ExperienceFolderStack> createState() => _ExperienceFolderStackState();
+}
+
+class _ExperienceFolderStackState extends State<_ExperienceFolderStack> {
+  int? hovered;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (_, c) {
+      final width = math.min(c.maxWidth, 600.0);
+      final height = math.min(c.maxHeight, width * .72);
+      final scale = math.min(width / 600, height / 430);
+      return Center(
+        child: SizedBox(
+          width: 600 * scale,
+          height: 430 * scale,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (var index = 0; index < _experiences.length; index++)
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  left:
+                      (index * 34 -
+                          (hovered != null && index < hovered! ? 7 : 0)) *
+                      scale,
+                  top:
+                      (index * 60 -
+                          (hovered == index ? 12 : 0) -
+                          (hovered != null && index < hovered! ? 3 : 0)) *
+                      scale,
+                  child: AnimatedRotation(
+                    duration: const Duration(milliseconds: 220),
+                    turns: hovered == index
+                        ? -.002
+                        : const [-.004, .002, -.001][index],
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 220),
+                      scale: hovered == index ? 1.018 : 1,
+                      alignment: Alignment.topCenter,
+                      child: CustomPaint(
+                        size: Size(520 * scale, 300 * scale),
+                        painter: _FolderPainter(
+                          color: Color.alphaBlend(
+                            _monoInk(context).withValues(
+                              alpha: hovered == index ? .055 : index * .012,
+                            ),
+                            Theme.of(context).colorScheme.surface,
+                          ),
+                          stroke: hovered == index
+                              ? _nightAccent(context, const Color(0xFF299FA4))
+                              : _monoInk(context),
+                          strokeWidth: (index == 2 ? 7 : 5.2) * scale,
+                          year: _experiences[index].year,
+                          emphasized: hovered == index,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              for (var index = 0; index < _experiences.length; index++)
+                Positioned(
+                  left: (index * 34 + 42) * scale,
+                  top: (index * 60 - 2) * scale,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => hovered = index),
+                    onExit: (_) {
+                      if (hovered == index) setState(() => hovered = null);
+                    },
+                    child: Semantics(
+                      button: true,
+                      label: 'Open ${_experiences[index].year} experience',
+                      child: InkWell(
+                        onTap: () => widget.onOpen(_experiences[index]),
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: (index == 2 ? 430 : 190) * scale,
+                          height: (index == 2 ? 245 : 58) * scale,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _FolderPainter extends CustomPainter {
+  const _FolderPainter({
+    required this.color,
+    required this.stroke,
+    required this.strokeWidth,
+    required this.year,
+    required this.emphasized,
+  });
+  final Color color, stroke;
+  final double strokeWidth;
+  final String year;
+  final bool emphasized;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final back = Path()
+      ..moveTo(size.width * .04, size.height * .10)
+      ..quadraticBezierTo(size.width * .04, 0, size.width * .15, 0)
+      ..lineTo(size.width * .34, 0)
+      ..quadraticBezierTo(
+        size.width * .39,
+        0,
+        size.width * .42,
+        size.height * .10,
+      )
+      ..quadraticBezierTo(
+        size.width * .44,
+        size.height * .16,
+        size.width * .51,
+        size.height * .16,
+      )
+      ..lineTo(size.width * .92, size.height * .16)
+      ..quadraticBezierTo(
+        size.width,
+        size.height * .16,
+        size.width * .98,
+        size.height * .27,
+      )
+      ..lineTo(size.width * .88, size.height * .88)
+      ..quadraticBezierTo(
+        size.width * .87,
+        size.height * .94,
+        size.width * .80,
+        size.height * .96,
+      )
+      ..lineTo(size.width * .12, size.height)
+      ..quadraticBezierTo(
+        size.width * .03,
+        size.height,
+        size.width * .04,
+        size.height * .88,
+      )
+      ..close();
+
+    canvas.drawShadow(
+      back,
+      Colors.black.withValues(alpha: emphasized ? .42 : .25),
+      strokeWidth * (emphasized ? 4.2 : 2.8),
+      false,
+    );
+    canvas.drawPath(back, Paint()..color = color);
+    canvas.drawPath(
+      back,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
+
+    final yearPainter = TextPainter(
+      text: TextSpan(
+        text: year,
+        style: TextStyle(
+          color: stroke,
+          fontSize: size.width * .050,
+          height: 1,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    yearPainter.paint(canvas, Offset(size.width * .12, size.height * .045));
+
+    // A document peeking above the front pocket gives the folder real depth.
+    final paper = Path()
+      ..moveTo(size.width * .10, size.height * .25)
+      ..lineTo(size.width * .90, size.height * .25)
+      ..lineTo(size.width * .86, size.height * .84)
+      ..lineTo(size.width * .13, size.height * .88)
+      ..close();
+    canvas.drawPath(
+      paper,
+      Paint()..color = Color.alphaBlend(stroke.withValues(alpha: .035), color),
+    );
+    canvas.drawPath(
+      paper,
+      Paint()
+        ..color = stroke.withValues(alpha: .42)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth * .42
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    final documentInk = stroke.withValues(alpha: .22);
+    for (var line = 0; line < 4; line++) {
+      final y = size.height * (.36 + line * .075);
+      final end = line == 3 ? .60 : .76 - line * .025;
+      canvas.drawLine(
+        Offset(size.width * .17, y),
+        Offset(size.width * end, y),
+        Paint()
+          ..color = documentInk
+          ..strokeWidth = strokeWidth * .25
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    // The raised front pocket is intentionally asymmetric, like a real file.
+    final pocket = Path()
+      ..moveTo(size.width * .07, size.height * .42)
+      ..lineTo(size.width * .34, size.height * .34)
+      ..cubicTo(
+        size.width * .41,
+        size.height * .32,
+        size.width * .42,
+        size.height * .21,
+        size.width * .49,
+        size.height * .20,
+      )
+      ..lineTo(size.width * .94, size.height * .20)
+      ..quadraticBezierTo(
+        size.width,
+        size.height * .20,
+        size.width * .98,
+        size.height * .30,
+      )
+      ..lineTo(size.width * .88, size.height * .88)
+      ..quadraticBezierTo(
+        size.width * .87,
+        size.height * .94,
+        size.width * .80,
+        size.height * .96,
+      )
+      ..lineTo(size.width * .12, size.height)
+      ..quadraticBezierTo(
+        size.width * .04,
+        size.height,
+        size.width * .05,
+        size.height * .90,
+      )
+      ..close();
+    canvas.drawShadow(
+      pocket,
+      Colors.black.withValues(alpha: .22),
+      strokeWidth * 1.7,
+      false,
+    );
+    canvas.drawPath(pocket, Paint()..color = color);
+    canvas.drawPath(
+      pocket,
+      Paint()
+        ..color = stroke
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // A restrained lower edge suggests material thickness without adding color.
+    canvas.drawLine(
+      Offset(size.width * .14, size.height * .965),
+      Offset(size.width * .78, size.height * .925),
+      Paint()
+        ..color = stroke.withValues(alpha: .28)
+        ..strokeWidth = strokeWidth * .34
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _FolderPainter oldDelegate) =>
+      color != oldDelegate.color ||
+      stroke != oldDelegate.stroke ||
+      strokeWidth != oldDelegate.strokeWidth ||
+      year != oldDelegate.year ||
+      emphasized != oldDelegate.emphasized;
+}
+
+class _ExperienceDialog extends StatelessWidget {
+  const _ExperienceDialog({required this.experience});
+  final _ExperienceData experience;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _nightAccent(context, const Color(0xFF299FA4));
+    final surface = Theme.of(context).colorScheme.surface;
+    final compact = MediaQuery.sizeOf(context).width < 600;
+
+    return Dialog(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: compact ? 16 : 28,
+        vertical: 24,
+      ),
+      elevation: 0,
+      shadowColor: Colors.black.withValues(alpha: .28),
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(compact ? 24 : 30),
+        side: BorderSide(color: _monoBorder(context).withValues(alpha: .75)),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 680),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            compact ? 24 : 40,
+            compact ? 20 : 28,
+            compact ? 24 : 40,
+            compact ? 26 : 36,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: .10),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          'SELECTED EXPERIENCE  ·  ${experience.period}',
+                          maxLines: 2,
+                          style: _meta.copyWith(color: accent, fontSize: 10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    tooltip: 'Close experience details',
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(40, 40),
+                      backgroundColor: _monoInk(
+                        context,
+                      ).withValues(alpha: .055),
+                    ),
+                    icon: const Icon(LucideIcons.x, size: 20),
+                  ),
+                ],
+              ),
+              SizedBox(height: compact ? 22 : 28),
+              Text(
+                experience.role,
+                style: TextStyle(
+                  fontSize: compact ? 30 : 38,
+                  height: 1.03,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: compact ? -1.1 : -1.6,
+                ),
+              ),
+              SizedBox(height: compact ? 18 : 22),
+              Text(
+                experience.summary,
+                style: TextStyle(
+                  color: _monoMuted(context),
+                  fontSize: compact ? 16 : 17,
+                  height: 1.55,
+                ),
+              ),
+              SizedBox(height: compact ? 24 : 30),
+              Divider(color: _monoBorder(context).withValues(alpha: .75)),
+              SizedBox(height: compact ? 20 : 24),
+              Text(
+                'SELECTED IMPACT',
+                style: _meta.copyWith(color: _monoMuted(context), fontSize: 11),
+              ),
+              const SizedBox(height: 16),
+              for (final highlight in experience.highlights)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        margin: const EdgeInsets.only(top: 1),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: .11),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(LucideIcons.check, size: 13, color: accent),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          highlight,
+                          style: TextStyle(
+                            color: _monoInk(context).withValues(alpha: .88),
+                            fontSize: compact ? 14 : 15,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: experience.tools
+                    .map((tool) => _ExperienceToolBadge(tool: tool))
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExperienceToolBadge extends StatelessWidget {
+  const _ExperienceToolBadge({required this.tool});
+  final String tool;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _nightAccent(context, const Color(0xFF299FA4));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: .075),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: accent.withValues(alpha: .18)),
+      ),
+      child: Text(
+        tool,
+        style: TextStyle(
+          color: _monoInk(context).withValues(alpha: .88),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }
 
 class _LargePhone extends StatelessWidget {
@@ -4543,11 +4840,7 @@ class _SkillsFace extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Expanded(
-                    child: _ArchitectureStack(
-                      animate: animate,
-                      compact: true,
-                      progress: 1,
-                    ),
+                    child: _ArchitectureStack(animate: animate, compact: true),
                   ),
                 ],
               ),
@@ -4559,9 +4852,7 @@ class _SkillsFace extends StatelessWidget {
               children: [
                 SizedBox(width: 340, child: copy),
                 const SizedBox(width: 28),
-                Expanded(
-                  child: _ArchitectureStack(animate: animate, progress: 1),
-                ),
+                Expanded(child: _ArchitectureStack(animate: animate)),
               ],
             ),
           );
@@ -4613,19 +4904,13 @@ class _TechMark extends StatelessWidget {
 }
 
 class _ArchitectureStack extends StatefulWidget {
-  const _ArchitectureStack({
-    required this.animate,
-    required this.progress,
-    this.compact = false,
-  });
+  const _ArchitectureStack({required this.animate, this.compact = false});
   final bool animate, compact;
-  final double progress;
   @override
   State<_ArchitectureStack> createState() => _ArchitectureStackState();
 }
 
 class _ArchitectureStackState extends State<_ArchitectureStack> {
-  double expansion = 1;
   int? focused;
   int? pinned;
   final PageController _mobilePageController = PageController(
@@ -4833,222 +5118,6 @@ class _ArchitectureStackState extends State<_ArchitectureStack> {
     Color(0xFFFFB84A),
     Color(0xFFD2D7E0),
   ][index];
-
-  // ignore: unused_element
-  Widget _buildLayer(int index, double scale, double entrance) {
-    final selected = focused ?? pinned;
-    final active = selected == null || selected == index;
-    final reduced = MediaQuery.disableAnimationsOf(context);
-    final rawReveal = ((widget.progress - (.10 + index * .14)) / .15).clamp(
-      0.0,
-      1.0,
-    );
-    final stagger =
-        entrance * (reduced ? 1.0 : Curves.easeOutCubic.transform(rawReveal));
-    final top = (130 + index * 78 * expansion) * scale;
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOutCubic,
-      left: (145 + index * 3) * scale,
-      top: top + (1 - stagger) * 90 * scale,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 220),
-        opacity: active ? stagger : stagger * .28,
-        child: MouseRegion(
-          onEnter: (_) => setState(() => focused = index),
-          onExit: (_) => setState(() => focused = null),
-          child: GestureDetector(
-            onTap: () => setState(() {
-              pinned = pinned == index ? null : index;
-              focused = null;
-            }),
-            child: Transform(
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, .001)
-                ..rotateX(-.11)
-                ..rotateZ(.035),
-              alignment: Alignment.center,
-              child: _ArchitectureLayerCard(
-                index: index,
-                scale: scale,
-                data: layers[index],
-                focused: selected == index,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildLabel(int index, double scale, double entrance) {
-    final data = layers[index];
-    final y = (147 + index * 78 * expansion) * scale;
-    final reveal = MediaQuery.disableAnimationsOf(context)
-        ? 1.0
-        : ((widget.progress - (.10 + index * .14)) / .15).clamp(0.0, 1.0);
-    final selected = focused ?? pinned;
-    final active = selected == null || selected == index;
-    return Positioned(
-      left: 518 * scale,
-      top: y,
-      child: Opacity(
-        opacity: (active ? entrance : entrance * .25) * reveal,
-        child: Row(
-          children: [
-            Container(
-              width: 32 * scale,
-              height: 1,
-              color: data.$3.withValues(alpha: .8),
-            ),
-            Container(
-              width: 134 * scale,
-              padding: EdgeInsets.symmetric(
-                horizontal: 12 * scale,
-                vertical: 8 * scale,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border.all(color: _monoBorder(context)),
-                borderRadius: BorderRadius.circular(15 * scale),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x12000000), blurRadius: 12),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.$1,
-                    style: TextStyle(
-                      fontSize: 11 * scale,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    data.$5.join(', '),
-                    style: TextStyle(
-                      fontSize: 8.6 * scale,
-                      height: 1.25,
-                      color: _monoMuted(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildSideLabel(int index, double scale, double entrance) {
-    final data = layers[index];
-    final reveal = MediaQuery.disableAnimationsOf(context)
-        ? 1.0
-        : ((widget.progress - (.10 + index * .14)) / .15).clamp(0.0, 1.0);
-    const accents = [
-      Color(0xFF119C99),
-      Color(0xFF168ED8),
-      Color(0xFF6356D9),
-      Color(0xFF49A85B),
-      Color(0xFFE08B18),
-      Color(0xFF657084),
-    ];
-    return Positioned(
-      left: 0,
-      top: (144 + index * 78 * expansion) * scale,
-      child: Opacity(
-        opacity: entrance * reveal,
-        child: SizedBox(
-          width: 125 * scale,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data.$1,
-                style: TextStyle(
-                  color: accents[index],
-                  fontSize: 10 * scale,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(height: 5 * scale),
-              Text(
-                data.$2,
-                style: TextStyle(
-                  color: _monoMuted(context),
-                  fontSize: 8.5 * scale,
-                  height: 1.25,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  Future<void> _openReadableView() => showDialog<void>(
-    context: context,
-    builder: (dialogContext) => Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760, maxHeight: 760),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 24, 16, 16),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.text, size: 26),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Skills — readable view',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          'Large text and simplified technology groups',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Close readable view',
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    icon: const Icon(LucideIcons.x, size: 28),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: _monoBorder(dialogContext)),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.all(24),
-                itemCount: layers.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 14),
-                itemBuilder: (_, index) =>
-                    _ReadableSkillCard(number: index + 1, data: layers[index]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _CapabilityButton extends StatelessWidget {
@@ -5254,7 +5323,7 @@ class _CapabilityDetailPanel extends StatelessWidget {
               border: Border.all(color: const Color(0x18000000)),
             ),
             child: Image.asset(
-              'assets/images/solatiy-home.png',
+              'assets/images/solatiy-home.webp',
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
             ),
@@ -5522,337 +5591,6 @@ class _MobileSkillShowcaseCard extends StatelessWidget {
   }
 }
 
-// ignore: unused_element
-class _ReadableViewButton extends StatelessWidget {
-  const _ReadableViewButton({required this.scale, required this.onPressed});
-  final double scale;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-    onPressed: onPressed,
-    icon: Icon(LucideIcons.text, size: 16 * scale),
-    label: Text(
-      'Readable view',
-      style: TextStyle(
-        fontSize: math.max(11, 11 * scale),
-        fontWeight: FontWeight.w800,
-      ),
-    ),
-    style: OutlinedButton.styleFrom(
-      foregroundColor: _monoInk(context),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      minimumSize: Size(math.max(120, 132 * scale), math.max(48, 42 * scale)),
-      side: BorderSide(color: _monoBorder(context)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12 * scale),
-      ),
-    ),
-  );
-}
-
-class _ReadableSkillCard extends StatelessWidget {
-  const _ReadableSkillCard({required this.number, required this.data});
-  final int number;
-  final (String, String, Color, IconData, List<String>) data;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: data.$3,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: _monoBorder(context)),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .85),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(data.$4, size: 28, color: ink),
-        ),
-        const SizedBox(width: 18),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${number.toString().padLeft(2, '0')}  ${data.$1}',
-                style: const TextStyle(
-                  color: ink,
-                  fontSize: 20,
-                  height: 1.2,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                data.$2,
-                style: const TextStyle(
-                  color: Color(0xFF555552),
-                  fontSize: 17,
-                  height: 1.35,
-                ),
-              ),
-              const SizedBox(height: 13),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final technology in data.$5)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .9),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        technology,
-                        style: const TextStyle(
-                          color: ink,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ArchitectureLayerCard extends StatelessWidget {
-  const _ArchitectureLayerCard({
-    required this.index,
-    required this.scale,
-    required this.data,
-    required this.focused,
-  });
-  final int index;
-  final double scale;
-  final (String, String, Color, IconData, List<String>) data;
-  final bool focused;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      width: 350 * scale,
-      height: 88 * scale,
-      padding: EdgeInsets.symmetric(horizontal: 18 * scale),
-      decoration: BoxDecoration(
-        color: data.$3.withValues(alpha: .82),
-        borderRadius: BorderRadius.circular(19 * scale),
-        border: Border.all(
-          color: data.$3.withValues(alpha: .95),
-          width: focused ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: data.$3.withValues(alpha: focused ? .65 : .38),
-            blurRadius: focused ? 30 : 18,
-            spreadRadius: focused ? 1 : 0,
-            offset: Offset(0, 12 * scale),
-          ),
-          const BoxShadow(
-            color: Color(0x16000000),
-            blurRadius: 13,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            data.$4,
-            size: 26 * scale,
-            color: data.$3.computeLuminance() > .7 ? ink : Colors.white,
-          ),
-          SizedBox(width: 14 * scale),
-          Expanded(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 5 * scale,
-              runSpacing: 4 * scale,
-              children: [
-                for (final technology in data.$5)
-                  _ArchitectureTechnology(
-                    label: technology,
-                    scale: scale,
-                    accent: _layerAccent(index),
-                  ),
-              ],
-            ),
-          ),
-          Container(
-            width: 6 * scale,
-            height: 6 * scale,
-            decoration: BoxDecoration(
-              color: _nightAccent(context, const Color(0xFF37A5A2)),
-              shape: BoxShape.circle,
-              boxShadow: _isDark(context)
-                  ? [
-                      BoxShadow(
-                        color: _nightAccent(
-                          context,
-                          const Color(0xFF37A5A2),
-                        ).withValues(alpha: .7),
-                        blurRadius: 12,
-                      ),
-                    ]
-                  : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _layerAccent(int i) => const [
-    Color(0xFF119C99),
-    Color(0xFF168ED8),
-    Color(0xFF6356D9),
-    Color(0xFF49A85B),
-    Color(0xFFE08B18),
-    Color(0xFF657084),
-  ][i];
-}
-
-class _ArchitectureTechnology extends StatelessWidget {
-  const _ArchitectureTechnology({
-    required this.label,
-    required this.scale,
-    required this.accent,
-  });
-  final String label;
-  final double scale;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) => Tooltip(
-    message: label,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 18 * scale,
-          height: 18 * scale,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .78),
-            borderRadius: BorderRadius.circular(5 * scale),
-          ),
-          child: Text(
-            label.substring(0, math.min(label.length, 2)).toUpperCase(),
-            style: TextStyle(
-              color: accent,
-              fontSize: 6.5 * scale,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        SizedBox(height: 2 * scale),
-        SizedBox(
-          width: 45 * scale,
-          child: Text(
-            label,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: ink, fontSize: 6.8 * scale, height: 1.05),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-// ignore: unused_element
-class _ArchitectureConnectorPainter extends CustomPainter {
-  const _ArchitectureConnectorPainter({
-    required this.entrance,
-    required this.expansion,
-    required this.scale,
-    required this.focused,
-  });
-  final double entrance, expansion, scale;
-  final int? focused;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const colors = [
-      Color(0xFF37C7B9),
-      Color(0xFF70D9F5),
-      Color(0xFFA77BEF),
-      Color(0xFF52D3BE),
-      Color(0xFFFFB45C),
-      Color(0xFFDADDE2),
-    ];
-    final x = 492 * scale;
-    final centers = <double>[
-      for (var i = 0; i < 6; i++) (174 + i * 78 * expansion) * scale,
-    ];
-    for (var i = 0; i < centers.length - 1; i++) {
-      final visible = ((entrance * 1.5) - i * .12).clamp(0.0, 1.0);
-      final start = centers[i];
-      final end = start + (centers[i + 1] - start) * visible;
-      final paint = Paint()
-        ..color = colors[i].withValues(
-          alpha: focused == null || focused == i || focused == i + 1 ? .9 : .2,
-        )
-        ..strokeWidth = 2 * scale
-        ..strokeCap = StrokeCap.round;
-      const dash = 6.0;
-      var y = start;
-      while (y < end) {
-        canvas.drawLine(
-          Offset(x, y),
-          Offset(x, math.min(y + dash * scale, end)),
-          paint,
-        );
-        y += 12 * scale;
-      }
-      if (visible > .85) {
-        canvas.drawCircle(
-          Offset(x, centers[i + 1]),
-          9 * scale,
-          Paint()..color = colors[i].withValues(alpha: .16),
-        );
-        canvas.drawCircle(
-          Offset(x, centers[i + 1]),
-          4 * scale,
-          Paint()..color = colors[i],
-        );
-        canvas.drawCircle(
-          Offset(x, centers[i + 1]),
-          2 * scale,
-          Paint()..color = Colors.white,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ArchitectureConnectorPainter oldDelegate) =>
-      oldDelegate.entrance != entrance ||
-      oldDelegate.expansion != expansion ||
-      oldDelegate.scale != scale ||
-      oldDelegate.focused != focused;
-}
-
 class _AboutFace extends StatelessWidget {
   const _AboutFace();
   @override
@@ -5946,17 +5684,9 @@ class _AboutFace extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
-                onPressed: () => _openUri(
-                  context,
-                  Uri(
-                    scheme: 'mailto',
-                    queryParameters: const {
-                      'subject': 'Résumé request — Nuruddin Mahmud',
-                    },
-                  ),
-                ),
-                icon: const Icon(Icons.download_rounded, size: 15),
-                label: const Text('Request résumé'),
+                onPressed: () => _openUri(context, githubProfileUri),
+                icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                label: const Text('View GitHub'),
                 style: TextButton.styleFrom(
                   foregroundColor: _monoInk(context),
                   textStyle: const TextStyle(
@@ -6004,23 +5734,15 @@ class _ContactFace extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           Text(
-            'Available by email',
+            'Available for enquiries on GitHub',
             style: TextStyle(fontSize: 16, color: _monoMuted(context)),
           ),
           const SizedBox(height: 14),
           _ActionButton(
-            label: 'Send an email',
+            label: 'Contact on GitHub',
             dark: true,
             icon: Icons.arrow_forward_rounded,
-            onPressed: () => _openUri(
-              context,
-              Uri(
-                scheme: 'mailto',
-                queryParameters: const {
-                  'subject': 'Portfolio enquiry — Nuruddin Mahmud',
-                },
-              ),
-            ),
+            onPressed: () => _openUri(context, githubProfileUri),
           ),
           const Spacer(),
           const Divider(),
@@ -6031,31 +5753,7 @@ class _ContactFace extends StatelessWidget {
             children: [
               _TextLink(
                 label: 'GitHub',
-                onTap: () => _openUri(
-                  context,
-                  Uri.parse('https://github.com/NuruddinMMS'),
-                ),
-              ),
-              _TextLink(
-                label: 'LinkedIn',
-                onTap: () => _openUri(
-                  context,
-                  Uri.parse(
-                    'https://www.linkedin.com/search/results/people/?keywords=Nuruddin%20Mahmud',
-                  ),
-                ),
-              ),
-              _TextLink(
-                label: 'Résumé',
-                onTap: () => _openUri(
-                  context,
-                  Uri(
-                    scheme: 'mailto',
-                    queryParameters: const {
-                      'subject': 'Résumé request — Nuruddin Mahmud',
-                    },
-                  ),
-                ),
+                onTap: () => _openUri(context, githubProfileUri),
               ),
             ],
           ),

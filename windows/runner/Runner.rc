@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "porfoliodin" "\0"
+            VALUE "CompanyName", "Nuruddin Mahmud" "\0"
+            VALUE "FileDescription", "Nuruddin Portfolio" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "porfoliodin" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Nuruddin Mahmud. All rights reserved." "\0"
             VALUE "OriginalFilename", "porfoliodin.exe" "\0"
-            VALUE "ProductName", "porfoliodin" "\0"
+            VALUE "ProductName", "Nuruddin Portfolio" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

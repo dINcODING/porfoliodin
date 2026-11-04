@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:porfoliodin/main.dart';
+import 'package:porfoliodin/portfolio_routes.dart';
 
 void main() {
+  test('portfolio routes stay inside a static hosting base path', () {
+    final base = Uri.parse('https://dincoding.github.io/porfoliodin/');
+
+    expect(
+      uriForFace(CubeFace.skills, base).toString(),
+      'https://dincoding.github.io/porfoliodin/#/skills',
+    );
+    expect(
+      faceForUri(Uri.parse('https://example.com/portfolio/#/experience')),
+      CubeFace.caseStudy,
+    );
+    expect(
+      faceForUri(Uri.parse('https://example.com/work')),
+      CubeFace.caseStudy,
+    );
+  });
+
   testWidgets('portfolio opens on the home face', (tester) async {
     tester.view.physicalSize = const Size(1440, 1000);
     tester.view.devicePixelRatio = 1;
@@ -38,6 +56,43 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 900));
       expect(tester.takeException(), isNull, reason: '$label overflowed');
     }
+  });
+
+  testWidgets('experience folder opens a readable dialog on phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const PortfolioApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Experience').last);
+    await tester.pumpAndSettle(const Duration(milliseconds: 900));
+    await tester.tap(find.bySemanticsLabel('Open 2023 experience'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Software Developer'), findsOneWidget);
+    expect(find.textContaining('2023 — Present'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('contact face exposes the verified GitHub destination', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const PortfolioApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Contact').last);
+    await tester.pumpAndSettle(const Duration(milliseconds: 900));
+
+    expect(find.text('Contact on GitHub'), findsOneWidget);
+    expect(githubProfileUri.toString(), 'https://github.com/dINcODING');
   });
 
   testWidgets('skills explorer fits and switches categories on desktop', (

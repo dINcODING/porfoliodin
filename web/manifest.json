@@ -1,12 +1,11 @@
 {
-    "name": "porfoliodin",
-    "short_name": "porfoliodin",
+    "name": "Nuruddin Mahmud — Portfolio",
+    "short_name": "Nuruddin",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
+    "background_color": "#FFFFFF",
+    "theme_color": "#151515",
     "description": "Nuruddin Mahmud — software engineer portfolio.",
-    "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
         {

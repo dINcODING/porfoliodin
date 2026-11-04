@@ -1,5 +1,5 @@
 name: porfoliodin
-description: "A new Flutter project."
+description: "Nuruddin Mahmud's interactive software engineering portfolio."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -31,10 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  vector_math: ^2.2.0
   url_launcher: ^6.3.2
   lucide_icons_flutter: ^3.1.15
 
@@ -62,21 +59,21 @@ flutter:
 
   assets:
     - assets/images/logoportfolio.png
-    - assets/images/az-integrated-home.png
-    - assets/images/az-integrated-projects.png
-    - assets/images/az-integrated-mobile.png
-    - assets/images/solatiy-home.png
-    - assets/images/solatiy-puzzle.png
-    - assets/images/super-segar-home.png
-    - assets/images/super-segar-pricing.png
-    - assets/images/super-segar-mobile.png
-    - assets/images/nasyrulquran-home.png
-    - assets/images/nasyrulquran-services.png
-    - assets/images/nasyrulquran-mobile.png
-    - assets/images/tadabbur-mushaf.png
-    - assets/images/tadabbur-reflection.png
-    - assets/images/hrms-employee.png
-    - assets/images/hrms-admin.png
+    - assets/images/az-integrated-home.webp
+    - assets/images/az-integrated-projects.webp
+    - assets/images/az-integrated-mobile.webp
+    - assets/images/solatiy-home.webp
+    - assets/images/solatiy-puzzle.webp
+    - assets/images/super-segar-home.webp
+    - assets/images/super-segar-pricing.webp
+    - assets/images/super-segar-mobile.webp
+    - assets/images/nasyrulquran-home.webp
+    - assets/images/nasyrulquran-services.webp
+    - assets/images/nasyrulquran-mobile.webp
+    - assets/images/tadabbur-mushaf.webp
+    - assets/images/tadabbur-reflection.webp
+    - assets/images/hrms-employee.webp
+    - assets/images/hrms-admin.webp
 
   # To add assets to your application, add an assets section, like this:
   # assets:
